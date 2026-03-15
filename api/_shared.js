@@ -18,19 +18,35 @@ export const PROMPTS = {
 
   analyzeUser: `Décris ce document en 1 phrase (type, sujet, portée). Donne le titre ou nom principal et 4-5 points clés du CONTENU (thèmes, chiffres marquants — 6 mots max chacun). JSON: {"s":"description","c":"titre","f":["pt1","pt2","pt3","pt4"]}`,
 
-  propose: `Tu es un consultant en contenu d'onboarding. Réponds UNIQUEMENT en JSON compact sans backticks.`,
+  propose: `Tu es un expert en contenu d'onboarding et en design de pages web. Réponds UNIQUEMENT en JSON compact sans backticks.`,
 
-  proposeUser: `À partir de ce PDF, propose 6 pages d'onboarding différentes pour les nouveaux employés.
+  proposeUser: `À partir de ce document, propose 6 pages d'onboarding DIFFÉRENTES pour les nouveaux employés.
 
-Chaque proposition = un PITCH CONCRET : quel contenu, présenté comment, quel bénéfice pour l'employé.
+Chaque proposition = un PITCH CONCRET avec un ANGLE éditorial + un FORMAT de mise en page précis.
+
+FORMATS DISPONIBLES (choisis le plus adapté au contenu de chaque proposition) :
+
+📊 DASHBOARD CHIFFRES : hero gradient + grid-2/grid-3 de cards avec big-number + label. Idéal pour KPIs, chiffres clés, données de l'entreprise.
+
+📋 ÉTAPES / PROCESS : hero + steps numérotées (1, 2, 3…). Idéal pour un parcours, une chaîne de valeur, un process métier, une chronologie.
+
+✅ CHECKLIST PRATIQUE : hero light + check-list avec catégories en chips. Idéal pour avantages, infos pratiques, choses à retenir.
+
+💬 FAQ / Q&A : hero + alternance cards question/réponse. Idéal pour règlement, politique, définitions, concepts à expliquer.
+
+🗺️ PANORAMA : hero dark + grid-2 de card-accent avec icon-circle + description. Idéal pour présenter des entités, des équipes, des marchés, des produits.
+
+📖 RÉSUMÉ ESSENTIEL : hero accent + quote marquante + check-list des points clés + card-dark fait saillant. Idéal pour synthétiser un long document.
 
 RÈGLES :
-- 6 propositions DIFFÉRENTES (angle + mise en page)
-- Adapte le format au contenu (cards pour chiffres, étapes pour process, Q&A pour définitions…)
-- Sois concret : l'admin doit visualiser la page finale
-- Le champ "r" = instruction de génération précise (contenu à extraire + mise en page à utiliser)
+- 6 propositions avec 6 ANGLES DIFFÉRENTS sur le contenu du document
+- Chaque proposition utilise un FORMAT DIFFÉRENT (ne pas répéter le même format)
+- Le champ "d" doit faire VISUALISER la page à l'admin (citer les vrais contenus du document)
+- Le champ "r" = instruction PRÉCISE pour le générateur : quel contenu extraire du document + quel format/layout utiliser + quels composants CSS
 
-JSON: {"p":[{"i":"emoji","t":"titre 5 mots max","d":"description concrète 1-2 phrases","r":"instruction génération 2-3 phrases"}]}`,
+EXEMPLE de bon "r" : "Extraire les 5 chiffres clés (CA, employés, pays, capacité, clients). Layout : hero-gradient avec emoji ⚡ + titre 'Energy Pool en 5 chiffres'. Puis grid-3 de cards avec big-number + label pour chaque KPI. Finir par une quote sur la mission."
+
+JSON: {"p":[{"i":"emoji","t":"titre 5 mots max","d":"description concrète 1-2 phrases qui cite les vrais contenus","r":"instruction génération détaillée avec format + contenu précis à extraire + composants CSS à utiliser"}]}`,
 
   generate: `Tu es un web designer senior. Tu génères des pages HTML d'onboarding pour les nouveaux employés. Une feuille CSS est déjà chargée.
 
