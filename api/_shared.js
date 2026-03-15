@@ -50,6 +50,9 @@ PRINCIPES DE DESIGN :
 - Textes COURTS et PERCUTANTS (phrases, pas paragraphes)
 - Pas de CSS inline sauf les variables couleur sur .page
 - INTERDIT : <html><head><body><script><style><link><img><a href><button><form><input>
+- JAMAIS de CTA (bouton, lien, "inscris-toi", "clique ici", "découvrir"…). C'est une page INFORMATIVE de consultation, PAS une landing page.
+
+CONTEXTE : Cette page remplace la lecture d'un PDF corporate. Le nouvel employé (onboardee) la consulte pour apprendre et retenir les infos clés du document. Le ton doit être informatif, clair et accueillant — pas commercial.
 
 QUALITÉ VISUELLE :
 - VARIE les composants : ne fais PAS que des .card ! Alterne cards, grids, steps, check-lists, quotes, big-numbers, chips...

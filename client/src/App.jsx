@@ -240,7 +240,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
       {/* HEADER */}
       <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${K.b}`, background: K.w, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg,${K.c},${K.d})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: K.w }}>P</div>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg,${K.c},${K.d})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: K.w }}>H</div>
           <span style={{ fontSize: 15, fontWeight: 700 }}>POC pdf IA</span>
         </div>
         {!["upload", "analyzing", "generating"].includes(step) && (
