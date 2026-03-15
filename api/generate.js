@@ -12,12 +12,9 @@ export default async function handler(req, res) {
 ${prompt}
 ${company ? `Entreprise: "${company}".` : ""} Couleur: ${color || "#6366f1"}.
 
-Page MINIMALISTE et ÉLÉGANTE pour un nouvel employé :
-- 1 hero (gradient + emoji + titre + 1 phrase)
-- 2 sections courtes (chiffres en gros, textes en 1-2 lignes, cards simples)
-- 1 footer (1 ligne)
-
-Chaque section = 1 div. Textes TRÈS COURTS (phrases, pas paragraphes). Beaucoup d'espace blanc.`;
+Génère une page d'onboarding COMPLÈTE, RICHE et BIEN DESIGNÉE pour un nouvel employé.
+Utilise TOUTE la palette de composants CSS disponibles pour créer une page variée et engageante.
+Adapte le nombre de sections au contenu (3 à 6 sections). Sois créatif avec les layouts.`;
 
     const response = await getClient().messages.create({
       model: MODEL,
