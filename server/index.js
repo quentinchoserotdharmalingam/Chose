@@ -178,6 +178,6 @@ app.post("/api/suggestions", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 PageGen API → http://localhost:${PORT}`);
+  console.log(`🚀 POC pdf IA API → http://localhost:${PORT}`);
   console.log(`   Modèle: ${MODEL}`);
 });

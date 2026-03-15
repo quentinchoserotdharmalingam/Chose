@@ -240,9 +240,8 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
       {/* HEADER */}
       <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${K.b}`, background: K.w, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg,${K.c},${K.d})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: K.w }}>H</div>
-          <span style={{ fontSize: 15, fontWeight: 700 }}>PageGen</span>
-          <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 10, background: K.l, color: K.c }}>proto</span>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg,${K.c},${K.d})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: K.w }}>P</div>
+          <span style={{ fontSize: 15, fontWeight: 700 }}>POC pdf IA</span>
         </div>
         {!["upload", "analyzing", "generating"].includes(step) && (
           <button onClick={rst} style={{ fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 8, border: `1px solid ${K.b}`, background: K.w, color: K.t, cursor: "pointer" }}>{"\u21a9"} Nouveau</button>
