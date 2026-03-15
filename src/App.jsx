@@ -82,22 +82,35 @@ export default function App() {
       const extractedText = await extractPdfText(file);
       if (abortRef.current) return;
 
-      // Step 2: Analyze + Propose in 1 API call (1 cold start, parallel Haiku)
-      const { analysis: sd, proposals: pd } = await analyzeAndPropose(extractedText);
-      if (abortRef.current) return;
+      // Step 2: Launch API call AND reveal OCR results IN PARALLEL
+      const apiPromise = analyzeAndPropose(extractedText);
 
-      // Progressive reveal (~2s) — lets user see what was extracted
-      if (sd.c) { setCompany(sd.c); await sleep(500); }
-      if (sd.s) { setSummary(sd.s); await sleep(400); }
-      const allFacts = sd.f || [];
-      for (let i = 0; i < allFacts.length; i++) {
-        await sleep(250);
-        setFacts((prev) => [...prev, allFacts[i]]);
-      }
-      if (abortRef.current) return;
+      // While API is working, show a quick preview of OCR content
+      // Extract a rough company name and key phrases from OCR text
+      const lines = extractedText.split("\n").filter(l => l.trim().length > 3);
+      const roughTitle = lines[0]?.substring(0, 80) || "Document";
+      setCompany(roughTitle);
+      await sleep(500);
+      setSummary("Analyse IA en cours...");
       await sleep(400);
+      // Show first few meaningful lines as "facts" while waiting
+      const previewFacts = lines.slice(1, 5).map(l => l.substring(0, 40).trim()).filter(Boolean);
+      for (let i = 0; i < previewFacts.length; i++) {
+        await sleep(250);
+        setFacts((prev) => [...prev, previewFacts[i]]);
+      }
 
+      // Now wait for the real API result
+      const { analysis: sd, proposals: pd } = await apiPromise;
+      if (abortRef.current) return;
+
+      // Replace rough preview with real analysis
+      if (sd.c) setCompany(sd.c);
+      if (sd.s) setSummary(sd.s);
+      setFacts(sd.f || []);
       setPhase(3);
+      await sleep(300);
+
       setProps((pd.p || []).map((p, i) => ({ ...p, id: `p${i}` })));
       setPhase(4);
       setStep("proposals");
