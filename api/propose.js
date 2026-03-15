@@ -1,4 +1,4 @@
-import { getClient, MODEL, PROMPTS } from "./_shared.js";
+import { getClient, MODEL_FAST, PROMPTS } from "./_shared.js";
 
 export const config = { api: { bodyParser: { sizeLimit: "25mb" } } };
 
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     }
 
     const response = await getClient().messages.create({
-      model: MODEL,
+      model: MODEL_FAST,
       max_tokens: 2000,
       system: PROMPTS.propose,
       messages,

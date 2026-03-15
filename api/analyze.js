@@ -1,4 +1,4 @@
-import { getClient, MODEL, PROMPTS } from "./_shared.js";
+import { getClient, MODEL_FAST, PROMPTS } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 
     // Claude analyzes the text extracted by Mistral OCR (client-side)
     const response = await getClient().messages.create({
-      model: MODEL,
+      model: MODEL_FAST,
       max_tokens: 400,
       system: PROMPTS.analyze,
       messages: [{
