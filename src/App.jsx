@@ -374,6 +374,9 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
               ))}
             </div>
             {err && <div style={{ marginBottom: 12, padding: "10px", borderRadius: 8, background: "#fef2f2", border: `1px solid ${K.er}`, color: K.er, fontSize: 13 }}>{err}</div>}
+            <button disabled={sel.size === 0} onClick={generate} style={{ marginBottom: 12, width: "100%", padding: "15px", borderRadius: 12, border: "none", background: sel.size > 0 ? `linear-gradient(135deg,${K.c},${K.d})` : K.a, color: sel.size > 0 ? K.w : K.m, fontSize: 15, fontWeight: 700, cursor: sel.size > 0 ? "pointer" : "not-allowed", boxShadow: sel.size > 0 ? "0 4px 14px rgba(99,102,241,0.3)" : "none", position: "sticky", top: 0, zIndex: 10 }}>
+              {sel.size === 0 ? "Sélectionne au moins 1" : sel.size === 1 ? "✨ Générer" : `✨ Fusionner (${sel.size})`}
+            </button>
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
               {props.map((pr, idx) => {
                 const on = sel.has(pr.id);
@@ -389,9 +392,6 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
                 );
               })}
             </div>
-            <button disabled={sel.size === 0} onClick={generate} style={{ marginTop: 14, width: "100%", padding: "15px", borderRadius: 12, border: "none", background: sel.size > 0 ? `linear-gradient(135deg,${K.c},${K.d})` : K.a, color: sel.size > 0 ? K.w : K.m, fontSize: 15, fontWeight: 700, cursor: sel.size > 0 ? "pointer" : "not-allowed", boxShadow: sel.size > 0 ? "0 4px 14px rgba(99,102,241,0.3)" : "none" }}>
-              {sel.size === 0 ? "Sélectionne au moins 1" : sel.size === 1 ? "✨ Générer" : `✨ Fusionner (${sel.size})`}
-            </button>
           </div>
         </div>
       )}
