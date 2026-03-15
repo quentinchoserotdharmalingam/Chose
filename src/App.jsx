@@ -88,14 +88,14 @@ export default function App() {
 
       // While API is working, show a quick preview of OCR content
       // Extract a rough company name and key phrases from OCR text
-      const lines = extractedText.split("\n").filter(l => l.trim().length > 3);
+      const lines = extractedText.split("\n").filter(l => l.trim().length > 3 && !l.includes("![") && !l.match(/^[\s#*\-|>]+$/) && !l.match(/^\s*img-?\d/i));
       const roughTitle = lines[0]?.substring(0, 80) || "Document";
       setCompany(roughTitle);
       await sleep(500);
       setSummary("Analyse IA en cours...");
       await sleep(400);
       // Show first few meaningful lines as "facts" while waiting
-      const previewFacts = lines.slice(1, 5).map(l => l.substring(0, 40).trim()).filter(Boolean);
+      const previewFacts = lines.slice(1, 5).map(l => l.substring(0, 40).trim()).filter(l => l && !l.includes("img"));
       for (let i = 0; i < previewFacts.length; i++) {
         await sleep(250);
         setFacts((prev) => [...prev, previewFacts[i]]);
@@ -368,6 +368,11 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
               ))}
             </div>
             {err && <div style={{ marginBottom: 12, padding: "10px", borderRadius: 8, background: "#fef2f2", border: `1px solid ${K.er}`, color: K.er, fontSize: 13 }}>{err}</div>}
+            <div style={{ position: "sticky", top: 0, zIndex: 10, paddingBottom: 10, background: K.bg }}>
+              <button disabled={sel.size === 0} onClick={generate} style={{ width: "100%", padding: "15px", borderRadius: 12, border: "none", background: sel.size > 0 ? `linear-gradient(135deg,${K.c},${K.d})` : K.a, color: sel.size > 0 ? K.w : K.m, fontSize: 15, fontWeight: 700, cursor: sel.size > 0 ? "pointer" : "not-allowed", boxShadow: sel.size > 0 ? "0 4px 14px rgba(99,102,241,0.3)" : "none" }}>
+                {sel.size === 0 ? "Sélectionne au moins 1" : sel.size === 1 ? "✨ Générer" : `✨ Fusionner (${sel.size})`}
+              </button>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
               {props.map((pr, idx) => {
                 const on = sel.has(pr.id);
@@ -383,9 +388,6 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
                 );
               })}
             </div>
-            <button disabled={sel.size === 0} onClick={generate} style={{ marginTop: 14, width: "100%", padding: "15px", borderRadius: 12, border: "none", background: sel.size > 0 ? `linear-gradient(135deg,${K.c},${K.d})` : K.a, color: sel.size > 0 ? K.w : K.m, fontSize: 15, fontWeight: 700, cursor: sel.size > 0 ? "pointer" : "not-allowed", boxShadow: sel.size > 0 ? "0 4px 14px rgba(99,102,241,0.3)" : "none" }}>
-              {sel.size === 0 ? "Sélectionne au moins 1" : sel.size === 1 ? "✨ Générer" : `✨ Fusionner (${sel.size})`}
-            </button>
           </div>
         </div>
       )}

@@ -12,9 +12,7 @@ export default async function handler(req, res) {
 ${prompt}
 ${company ? `Entreprise: "${company}".` : ""} Couleur: ${color || "#6366f1"}.
 
-Génère une page d'onboarding COMPLÈTE, RICHE et BIEN DESIGNÉE pour un nouvel employé.
-Utilise TOUTE la palette de composants CSS disponibles pour créer une page variée et engageante.
-Adapte le nombre de sections au contenu (3 à 6 sections). Sois créatif avec les layouts.`;
+Génère la page en suivant la RECETTE du system prompt. RAPPEL CRITIQUE : les chiffres clés en .grid-2/.grid-3 de cards, JAMAIS empilés verticalement.`;
 
     const response = await getClient().messages.create({
       model: MODEL,
