@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { analyzePdf, proposePdf, generatePage, modifyPage, getSuggestions } from "./api.js";
+import { extractPdfText, analyzeText, proposePdf, generatePage, modifyPage, getSuggestions } from "./api.js";
 
 // ── UTILS ──
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -80,15 +80,14 @@ export default function App() {
       if (abortRef.current) return;
       setPhase(2);
 
-      // Launch analyze + propose in parallel
-      const [analyzeResult, proposeResult] = await Promise.all([
-        analyzePdf(file),
-        proposePdf(file),
-      ]);
+      // Step 1: Mistral OCR extracts text client-side (bypasses Vercel 4.5MB limit)
+      const extractedText = await extractPdfText(file);
       if (abortRef.current) return;
 
-      // Slow reveal of analysis results
-      const sd = analyzeResult;
+      // Step 2: Claude analyzes the extracted text (small payload, fast)
+      const sd = await analyzeText(extractedText);
+      if (abortRef.current) return;
+
       if (sd.c) { setCompany(sd.c); await sleep(1200); }
       if (sd.s) { setSummary(sd.s); await sleep(1000); }
       const allFacts = sd.f || [];
@@ -98,10 +97,13 @@ export default function App() {
       }
       if (abortRef.current) return;
 
-      await sleep(1000);
+      await sleep(800);
       setPhase(3);
 
-      // Proposals already loaded
+      // Step 2: Proposals from extracted text (no PDF re-upload)
+      const proposeResult = await proposePdf(extractedText);
+      if (abortRef.current) return;
+
       const pd = proposeResult;
       setProps((pd.p || []).map((p, i) => ({ ...p, id: `p${i}` })));
       setPhase(4);
@@ -115,7 +117,7 @@ export default function App() {
   const generate = async () => {
     if (sel.size === 0) return;
     setStep("generating"); setSugs([]); setHtml(""); setPct(0);
-    setGenPhase("Construction du hero\u2026"); setErr("");
+    setGenPhase("Construction du hero…"); setErr("");
     abortRef.current = false;
 
     // Smooth progress 0->95% over ~15s
@@ -127,22 +129,22 @@ export default function App() {
       else animPct += 0.04 + Math.random() * 0.03;
       animPct = Math.min(animPct, 95.5);
       setPct(Math.round(animPct));
-      if (animPct < 25) setGenPhase("Construction du hero\u2026");
-      else if (animPct < 55) setGenPhase("Sections principales\u2026");
-      else if (animPct < 85) setGenPhase("Finitions\u2026");
-      else setGenPhase("Presque pr\u00eat\u2026");
+      if (animPct < 25) setGenPhase("Construction du hero…");
+      else if (animPct < 55) setGenPhase("Sections principales…");
+      else if (animPct < 85) setGenPhase("Finitions…");
+      else setGenPhase("Presque prêt…");
     }, 250);
 
     try {
       const picks = props.filter((x) => sel.has(x.id));
       const context_str = picks.length === 1
         ? picks[0].r
-        : `Fusionne ces th\u00e8mes en UNE page coh\u00e9rente: ${picks.map((p) => `${p.t}: ${p.r}`).join(". ")}`;
+        : `Fusionne ces thèmes en UNE page cohérente: ${picks.map((p) => `${p.t}: ${p.r}`).join(". ")}`;
 
       const docContext = [
         summary ? `Document: ${summary}` : "",
         company ? `Titre/Entreprise: ${company}` : "",
-        facts.length > 0 ? `Points cl\u00e9s: ${facts.join(", ")}` : "",
+        facts.length > 0 ? `Points clés: ${facts.join(", ")}` : "",
       ].filter(Boolean).join(". ");
 
       const result = await generatePage({
@@ -156,14 +158,14 @@ export default function App() {
       clearInterval(timerRef.current);
       timerRef.current = null;
       setPct(100);
-      setGenPhase("Termin\u00e9 !");
+      setGenPhase("Terminé !");
       setHtml(result.html);
 
       setHist([
-        { role: "user", content: `${docContext}\n\nConsigne: ${context_str}\n\nG\u00e9n\u00e8re la page compl\u00e8te.` },
+        { role: "user", content: `${docContext}\n\nConsigne: ${context_str}\n\nGénère la page complète.` },
         { role: "assistant", content: result.html },
       ]);
-      setMsgs([{ role: "assistant", text: "Page g\u00e9n\u00e9r\u00e9e ! Tu peux l\u2019ajuster ci-dessous." }]);
+      setMsgs([{ role: "assistant", text: "Page générée ! Tu peux l’ajuster ci-dessous." }]);
 
       await sleep(500);
       setTab("preview");
@@ -186,7 +188,7 @@ export default function App() {
       const result = await getSuggestions(h);
       if (Array.isArray(result.suggestions)) setSugs(result.suggestions.slice(0, 4));
     } catch {
-      setSugs(["Rends le ton plus chaleureux", "Mets les chiffres plus en avant", "Ajoute une FAQ en bas de page", "R\u00e9organise les sections"]);
+      setSugs(["Rends le ton plus chaleureux", "Mets les chiffres plus en avant", "Ajoute une FAQ en bas de page", "Réorganise les sections"]);
     } finally { setLoadS(false); }
   };
 
@@ -198,7 +200,7 @@ export default function App() {
       const h = result.html;
       setHtml(h);
       setHist([...hist, { role: "user", content: msg }, { role: "assistant", content: h }]);
-      setMsgs((p) => [...p, { role: "assistant", text: "Modifs appliqu\u00e9es !" }]);
+      setMsgs((p) => [...p, { role: "assistant", text: "Modifs appliquées !" }]);
       doSugs(h);
     } catch (e) {
       setMsgs((p) => [...p, { role: "assistant", text: `Erreur: ${e.message}` }]);
@@ -245,7 +247,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
           <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 10, background: K.l, color: K.c }}>proto</span>
         </div>
         {!["upload", "analyzing", "generating"].includes(step) && (
-          <button onClick={rst} style={{ fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 8, border: `1px solid ${K.b}`, background: K.w, color: K.t, cursor: "pointer" }}>{"\u21a9"} Nouveau</button>
+          <button onClick={rst} style={{ fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 8, border: `1px solid ${K.b}`, background: K.w, color: K.t, cursor: "pointer" }}>{"↩"} Nouveau</button>
         )}
       </div>
 
@@ -253,17 +255,17 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
       {step === "upload" && (
         <div style={{ flex: 1, overflow: "auto", padding: "20px 16px", display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 40 }}>
           <div style={{ maxWidth: 420, width: "100%", textAlign: "center" }}>
-            <div style={{ fontSize: 28, marginBottom: 6 }}>{"\u2728"}</div>
+            <div style={{ fontSize: 28, marginBottom: 6 }}>{"✨"}</div>
             <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Transforme ton PDF</h1>
-            <p style={{ fontSize: 13, color: K.s, lineHeight: 1.5, marginBottom: 20 }}>L'IA analysera ton document et proposera 6 pages adapt\u00e9es.</p>
+            <p style={{ fontSize: 13, color: K.s, lineHeight: 1.5, marginBottom: 20 }}>L'IA analysera ton document et proposera 6 pages adaptées.</p>
             <div onClick={() => fRef.current?.click()} style={{ border: `2px dashed ${file ? K.c : K.b}`, borderRadius: 14, padding: "28px 16px", cursor: "pointer", background: file ? K.l + "40" : K.w, marginBottom: 12 }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>{"\uD83D\uDCC4"}</div>
-              <div style={{ fontSize: 14, color: file ? K.c : K.s, fontWeight: file ? 600 : 400 }}>{file ? "Fichier pr\u00eat \u2713" : "Choisis ton PDF"}</div>
-              {fname && <div style={{ marginTop: 8, padding: "5px 10px", borderRadius: 6, background: K.a, fontSize: 11, color: K.c, display: "inline-block", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{"\uD83D\uDCCE"} {fname}</div>}
+              <div style={{ fontSize: 32, marginBottom: 8 }}>{"📄"}</div>
+              <div style={{ fontSize: 14, color: file ? K.c : K.s, fontWeight: file ? 600 : 400 }}>{file ? "Fichier prêt ✓" : "Choisis ton PDF"}</div>
+              {fname && <div style={{ marginTop: 8, padding: "5px 10px", borderRadius: 6, background: K.a, fontSize: 11, color: K.c, display: "inline-block", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{"📎"} {fname}</div>}
               <input ref={fRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={pick} />
             </div>
             {err && <div style={{ marginBottom: 12, padding: "10px", borderRadius: 8, background: "#fef2f2", border: `1px solid ${K.er}`, color: K.er, fontSize: 13 }}>{err}</div>}
-            <button disabled={!file} onClick={analyze} style={{ width: "100%", padding: "15px", borderRadius: 12, border: "none", background: file ? `linear-gradient(135deg,${K.c},${K.d})` : K.a, color: file ? K.w : K.m, fontSize: 15, fontWeight: 700, cursor: file ? "pointer" : "not-allowed", boxShadow: file ? "0 4px 14px rgba(99,102,241,0.3)" : "none" }}>{"\uD83D\uDD0D"} Analyser le PDF</button>
+            <button disabled={!file} onClick={analyze} style={{ width: "100%", padding: "15px", borderRadius: 12, border: "none", background: file ? `linear-gradient(135deg,${K.c},${K.d})` : K.a, color: file ? K.w : K.m, fontSize: 15, fontWeight: 700, cursor: file ? "pointer" : "not-allowed", boxShadow: file ? "0 4px 14px rgba(99,102,241,0.3)" : "none" }}>{"🔍"} Analyser le PDF</button>
           </div>
         </div>
       )}
@@ -274,14 +276,14 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
           <div style={{ maxWidth: 400, margin: "0 auto" }}>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <div style={{ width: 36, height: 36, border: `3px solid ${K.b}`, borderTopColor: K.c, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
-              <div style={{ fontSize: 15, fontWeight: 600 }}>Analyse du document\u2026</div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Analyse du document…</div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
               {[
                 { l: "Lecture du PDF", ok: phase > 1 },
                 { l: "Identification du contenu", ok: phase > 1 && (!!company || !!summary) },
-                { l: "Extraction des informations cl\u00e9s", ok: facts.length > 0 },
-                { l: "Pr\u00e9paration des propositions", ok: phase > 3 },
+                { l: "Extraction des informations clés", ok: facts.length > 0 },
+                { l: "Préparation des propositions", ok: phase > 3 },
               ].map((s, i) => {
                 const active = !s.ok && (
                   (i === 0 && phase === 1) ||
@@ -297,7 +299,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 10, color: K.w, fontWeight: 700,
                       ...(active ? { animation: "pu 2.5s ease infinite" } : {}),
-                    }}>{s.ok ? "\u2713" : (i + 1)}</div>
+                    }}>{s.ok ? "✓" : (i + 1)}</div>
                     <span style={{ fontSize: 13, color: s.ok ? K.ok : (active ? K.t : K.m), fontWeight: active ? 600 : 400 }}>{s.l}</span>
                   </div>
                 );
@@ -305,7 +307,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
             </div>
             {(summary || company || facts.length > 0) && (
               <div style={{ padding: "16px", borderRadius: 14, background: K.w, border: `1px solid ${K.b}`, animation: "fu 0.4s ease" }}>
-                <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>{"\uD83D\uDCC4"} Document analys\u00e9</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>{"📄"} Document analysé</div>
                 {(company || summary) && (
                   <div style={{ marginBottom: facts.length > 0 ? 12 : 0, animation: "fu 0.3s ease" }}>
                     {company && <div style={{ fontSize: 15, fontWeight: 700, color: K.c, marginBottom: 4, animation: "pop 0.3s ease" }}>{company}</div>}
@@ -314,7 +316,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
                 )}
                 {facts.length > 0 && (
                   <>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>Points cl\u00e9s identifi\u00e9s</div>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>Points clés identifiés</div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                       {facts.map((f, i) => (
                         <span key={i} style={{
@@ -331,7 +333,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
                   <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${K.b}`, display: "flex", alignItems: "center", gap: 6 }}>
                     <div style={{ width: 12, height: 12, border: `2px solid ${K.b}`, borderTopColor: K.c, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                     <span style={{ fontSize: 11, color: K.m, animation: "pu 2.5s ease infinite" }}>
-                      {phase < 3 ? "Analyse en cours\u2026" : "Cr\u00e9ation de 6 propositions de pages\u2026"}
+                      {phase < 3 ? "Analyse en cours…" : "Création de 6 propositions de pages…"}
                     </span>
                   </div>
                 )}
@@ -366,7 +368,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
                 const on = sel.has(pr.id);
                 return (
                   <button key={pr.id} onClick={() => tog(pr.id)} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px", borderRadius: 12, border: on ? `2px solid ${K.c}` : `1.5px solid ${K.b}`, background: on ? K.l + "60" : K.w, cursor: "pointer", textAlign: "left", animation: `fu ${0.1 + idx * 0.06}s ease` }}>
-                    <div style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0, marginTop: 2, border: on ? `2px solid ${K.c}` : `2px solid ${K.b}`, background: on ? K.c : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: K.w, fontWeight: 700 }}>{on && "\u2713"}</div>
+                    <div style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0, marginTop: 2, border: on ? `2px solid ${K.c}` : `2px solid ${K.b}`, background: on ? K.c : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: K.w, fontWeight: 700 }}>{on && "✓"}</div>
                     <div style={{ fontSize: 20, flexShrink: 0 }}>{pr.i}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>{pr.t}</div>
@@ -377,7 +379,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
               })}
             </div>
             <button disabled={sel.size === 0} onClick={generate} style={{ marginTop: 14, width: "100%", padding: "15px", borderRadius: 12, border: "none", background: sel.size > 0 ? `linear-gradient(135deg,${K.c},${K.d})` : K.a, color: sel.size > 0 ? K.w : K.m, fontSize: 15, fontWeight: 700, cursor: sel.size > 0 ? "pointer" : "not-allowed", boxShadow: sel.size > 0 ? "0 4px 14px rgba(99,102,241,0.3)" : "none" }}>
-              {sel.size === 0 ? "S\u00e9lectionne au moins 1" : sel.size === 1 ? "\u2728 G\u00e9n\u00e9rer" : `\u2728 Fusionner (${sel.size})`}
+              {sel.size === 0 ? "Sélectionne au moins 1" : sel.size === 1 ? "✨ Générer" : `✨ Fusionner (${sel.size})`}
             </button>
           </div>
         </div>
@@ -397,7 +399,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
               </div>
             </div>
             <div style={{ padding: "14px", borderRadius: 12, background: K.w, border: `1px solid ${K.b}`, marginBottom: 12, animation: "fu 0.3s" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>{"\uD83C\uDFA8"} Page en cours de cr\u00e9ation</div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>{"🎨"} Page en cours de création</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {props.filter((p) => sel.has(p.id)).map((p) => (
                   <div key={p.id} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
@@ -412,7 +414,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
             </div>
             {(company || facts.length > 0) && (
               <div style={{ padding: "12px 14px", borderRadius: 12, background: K.w, border: `1px solid ${K.b}`, marginBottom: 12, animation: "fu 0.4s" }}>
-                <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>{"\uD83D\uDCC4"} Source</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>{"📄"} Source</div>
                 {company && <div style={{ fontSize: 13, fontWeight: 600, color: K.c, marginBottom: 4 }}>{company}</div>}
                 {facts.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
@@ -422,7 +424,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
               </div>
             )}
             <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${K.b}`, background: K.w, animation: "fu 0.5s" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: K.m, padding: "8px 12px", borderBottom: `1px solid ${K.b}`, textTransform: "uppercase", letterSpacing: "0.04em" }}>Aper\u00e7u</div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: K.m, padding: "8px 12px", borderBottom: `1px solid ${K.b}`, textTransform: "uppercase", letterSpacing: "0.04em" }}>Aperçu</div>
               <div style={{ height: 80, background: `linear-gradient(135deg, ${color}22, ${color}44)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <div style={{ width: "60%", height: 16, borderRadius: 8, background: `linear-gradient(90deg, ${K.b}, ${K.a}, ${K.b})`, backgroundSize: "400px 100%", animation: pct > 10 ? "shimmer 1.8s ease infinite" : "none" }} />
               </div>
@@ -447,7 +449,7 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
       {/* RESULT */}
       {step === "result" && (<>
         <div style={{ display: "flex", borderBottom: `1px solid ${K.b}`, background: K.w, flexShrink: 0 }}>
-          {[{ id: "preview", l: "\uD83D\uDC41 Aper\u00e7u" }, { id: "chat", l: "\uD83D\uDCAC Ajuster" }, { id: "code", l: "</> HTML" }].map((t) => (
+          {[{ id: "preview", l: "👁 Aperçu" }, { id: "chat", l: "💬 Ajuster" }, { id: "code", l: "</> HTML" }].map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "11px 4px", border: "none", background: "transparent", color: tab === t.id ? K.c : K.m, fontSize: 13, fontWeight: tab === t.id ? 700 : 500, cursor: "pointer", borderBottom: tab === t.id ? `2px solid ${K.c}` : "2px solid transparent" }}>{t.l}</button>
           ))}
         </div>
@@ -455,13 +457,13 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
           <div style={{ flex: 1, fontSize: 11, color: K.s, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {props.filter((p) => sel.has(p.id)).map((p) => p.i + " " + p.t).join(" + ")}
           </div>
-          <button onClick={() => { setStep("proposals"); setHtml(""); setMsgs([]); setSugs([]); setPct(0); setDraft(""); setErr(""); }} style={{ padding: "6px 9px", borderRadius: 7, border: `1px solid ${K.b}`, background: K.w, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{"\uD83D\uDD04"}</button>
-          <button onClick={cp} style={{ padding: "6px 11px", borderRadius: 7, border: "none", background: copied ? K.ok : K.c, color: K.w, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{copied ? "\u2713" : "\uD83D\uDCCB Copier"}</button>
+          <button onClick={() => { setStep("proposals"); setHtml(""); setMsgs([]); setSugs([]); setPct(0); setDraft(""); setErr(""); }} style={{ padding: "6px 9px", borderRadius: 7, border: `1px solid ${K.b}`, background: K.w, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{"🔄"}</button>
+          <button onClick={cp} style={{ padding: "6px 11px", borderRadius: 7, border: "none", background: copied ? K.ok : K.c, color: K.w, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{copied ? "✓" : "📋 Copier"}</button>
         </div>
         <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
           {tab === "preview" && (
             <div style={{ flex: 1, overflow: "auto", background: "#eef0f2" }}>
-              <iframe ref={iRef} style={{ width: "100%", height: "100%", border: "none", minHeight: 600 }} sandbox="allow-same-origin allow-scripts" title="Aper\u00e7u" />
+              <iframe ref={iRef} style={{ width: "100%", height: "100%", border: "none", minHeight: 600 }} sandbox="allow-same-origin allow-scripts" title="Aperçu" />
             </div>
           )}
           {tab === "chat" && (
@@ -470,10 +472,10 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
                 {msgs.map((m, i) => (
                   <div key={i} style={{ padding: "9px 12px", borderRadius: 11, fontSize: 13, lineHeight: 1.5, maxWidth: "85%", alignSelf: m.role === "user" ? "flex-end" : "flex-start", background: m.role === "user" ? K.c : K.a, color: m.role === "user" ? K.w : K.t, border: m.role === "user" ? "none" : `1px solid ${K.b}`, wordBreak: "break-word", animation: "fu 0.2s" }}>{m.text}</div>
                 ))}
-                {busy && <div style={{ padding: "9px 12px", borderRadius: 11, fontSize: 13, alignSelf: "flex-start", background: K.a, border: `1px solid ${K.b}`, color: K.m, animation: "pu 2.5s ease infinite" }}>Modification\u2026</div>}
+                {busy && <div style={{ padding: "9px 12px", borderRadius: 11, fontSize: 13, alignSelf: "flex-start", background: K.a, border: `1px solid ${K.b}`, color: K.m, animation: "pu 2.5s ease infinite" }}>Modification…</div>}
                 {sugs.length > 0 && !busy && (
                   <div style={{ alignSelf: "flex-start", maxWidth: "95%", animation: "fu 0.3s" }}>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 5 }}>{"\uD83D\uDCA1"} Suggestions</div>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 5 }}>{"💡"} Suggestions</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                       {sugs.map((s, i) => (
                         <button key={i} onClick={() => setDraft(s)} style={{ padding: "8px 11px", borderRadius: 9, border: `1px solid ${K.b}`, background: K.w, color: K.t, fontSize: 12, cursor: "pointer", textAlign: "left", lineHeight: 1.4 }}>{s}</button>
@@ -481,12 +483,12 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
                     </div>
                   </div>
                 )}
-                {loadS && !busy && sugs.length === 0 && <div style={{ fontSize: 11, color: K.m, animation: "pu 2.5s ease infinite" }}>Suggestions\u2026</div>}
+                {loadS && !busy && sugs.length === 0 && <div style={{ fontSize: 11, color: K.m, animation: "pu 2.5s ease infinite" }}>Suggestions…</div>}
                 <div ref={eRef} />
               </div>
               <div style={{ padding: "10px 12px", borderTop: `1px solid ${K.b}`, display: "flex", gap: 8, flexShrink: 0, background: K.w }}>
-                <textarea rows={2} style={{ flex: 1, padding: "10px", borderRadius: 10, border: `1px solid ${draft ? K.c : K.b}`, color: K.t, fontSize: 14, outline: "none", resize: "none", lineHeight: 1.4, background: draft ? K.l + "40" : K.w }} placeholder="S\u00e9lectionne une suggestion ou \u00e9cris\u2026" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
-                <button disabled={busy || !draft.trim()} onClick={send} style={{ padding: "10px 15px", borderRadius: 10, border: "none", background: (busy || !draft.trim()) ? K.a : K.c, color: (busy || !draft.trim()) ? K.m : K.w, fontSize: 16, cursor: (busy || !draft.trim()) ? "not-allowed" : "pointer", flexShrink: 0, alignSelf: "flex-end" }}>{"\u27A4"}</button>
+                <textarea rows={2} style={{ flex: 1, padding: "10px", borderRadius: 10, border: `1px solid ${draft ? K.c : K.b}`, color: K.t, fontSize: 14, outline: "none", resize: "none", lineHeight: 1.4, background: draft ? K.l + "40" : K.w }} placeholder="Sélectionne une suggestion ou écris…" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
+                <button disabled={busy || !draft.trim()} onClick={send} style={{ padding: "10px 15px", borderRadius: 10, border: "none", background: (busy || !draft.trim()) ? K.a : K.c, color: (busy || !draft.trim()) ? K.m : K.w, fontSize: 16, cursor: (busy || !draft.trim()) ? "not-allowed" : "pointer", flexShrink: 0, alignSelf: "flex-end" }}>{"➤"}</button>
               </div>
             </div>
           )}
