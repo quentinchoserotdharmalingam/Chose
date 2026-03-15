@@ -1,0 +1,41 @@
+import { getClient, MODEL, PROMPTS } from "./_shared.js";
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+
+  try {
+    const { prompt, context, company, color } = req.body;
+    if (!prompt) return res.status(400).json({ error: "Prompt requis" });
+
+    const userPrompt = `${context || ""}
+
+${prompt}
+${company ? `Entreprise: "${company}".` : ""} Couleur: ${color || "#6366f1"}.
+
+Page MINIMALISTE et ÉLÉGANTE pour un nouvel employé :
+- 1 hero (gradient + emoji + titre + 1 phrase)
+- 2 sections courtes (chiffres en gros, textes en 1-2 lignes, cards simples)
+- 1 footer (1 ligne)
+
+Chaque section = 1 div. Textes TRÈS COURTS (phrases, pas paragraphes). Beaucoup d'espace blanc.`;
+
+    const response = await getClient().messages.create({
+      model: MODEL,
+      max_tokens: 4000,
+      system: PROMPTS.generate,
+      messages: [{ role: "user", content: userPrompt }],
+    });
+
+    let html = response.content.filter(b => b.type === "text").map(b => b.text).join("");
+    html = html.replace(/```html\n?|```\n?/g, "").trim();
+
+    const openDivs = (html.match(/<div/gi) || []).length;
+    const closeDivs = (html.match(/<\/div>/gi) || []).length;
+    if (openDivs > closeDivs) html += "</div>".repeat(openDivs - closeDivs);
+
+    res.json({ html });
+  } catch (err) {
+    console.error("Generate error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+}
