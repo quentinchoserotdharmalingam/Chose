@@ -87,13 +87,17 @@ p{font-size:14px;color:#4a4a6a;margin-bottom:6px;line-height:1.7}
 
 /* Responsive */
 @media(max-width:500px){
-  .grid-2,.grid-3{grid-template-columns:1fr}
+  .grid-2{grid-template-columns:repeat(2,1fr)}
+  .grid-3{grid-template-columns:repeat(2,1fr)}
   .hero{padding:32px 18px;border-radius:16px}
   .hero h1{font-size:22px}
   h1{font-size:20px}
   .big-number{font-size:28px}
   .big-emoji{font-size:32px}
   .card,.card-accent,.card-dark,.card-outline,.card-glass{padding:16px}
+}
+@media(max-width:360px){
+  .grid-2,.grid-3{grid-template-columns:1fr}
 }
 
 /* Animations */
