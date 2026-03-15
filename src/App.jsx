@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { extractPdfText, analyzeText, proposePdf, generatePage, modifyPage, getSuggestions } from "./api.js";
+import { extractPdfText, analyzeAndPropose, generatePage, modifyPage, getSuggestions } from "./api.js";
 
 // ── UTILS ──
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -82,24 +82,15 @@ export default function App() {
       const extractedText = await extractPdfText(file);
       if (abortRef.current) return;
 
-      // Step 2: Analyze + Propose IN PARALLEL (both use Haiku = fast)
-      const [sd, proposeResult] = await Promise.all([
-        analyzeText(extractedText),
-        proposePdf(extractedText),
-      ]);
+      // Step 2: Analyze + Propose in 1 API call (1 cold start, parallel Haiku)
+      const { analysis: sd, proposals: pd } = await analyzeAndPropose(extractedText);
       if (abortRef.current) return;
 
-      // Fast reveal (~1s total)
+      // Instant reveal
       if (sd.c) setCompany(sd.c);
       if (sd.s) setSummary(sd.s);
       setFacts(sd.f || []);
-      await sleep(300);
-      if (abortRef.current) return;
-
       setPhase(3);
-
-      // Proposals already loaded in parallel
-      const pd = proposeResult;
       setProps((pd.p || []).map((p, i) => ({ ...p, id: `p${i}` })));
       setPhase(4);
       setStep("proposals");
