@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     const response = await getClient().messages.create({
       model: MODEL,
       max_tokens: 4000,
-      system: PROMPTS.generate + "\nApplique les modifications. HTML complet, même style minimaliste.",
+      system: PROMPTS.generate + "\nApplique les modifications demandées. Renvoie le HTML complet modifié avec les mêmes classes CSS.",
       messages,
     });
 

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { extractPdfText, analyzeAndPropose, generatePage, modifyPage, getSuggestions } from "./api.js";
+import { PAGE_CSS } from "./page-styles.js";
 
 // ── UTILS ──
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -52,7 +53,7 @@ export default function App() {
       try {
         const d = iRef.current.contentDocument;
         d.open();
-        d.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:16px;font-family:system-ui,sans-serif;background:#f8f9fa;}</style></head><body>${html}</body></html>`);
+        d.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${PAGE_CSS}</style></head><body>${html}</body></html>`);
         d.close();
       } catch { /* cross-origin */ }
     }
