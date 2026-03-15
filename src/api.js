@@ -31,12 +31,11 @@ export async function analyzePdf(file) {
   });
 }
 
-export async function proposePdf(file) {
-  const pdf_base64 = await fileToBase64(file);
+export async function proposePdf(extractedText) {
   return request("/propose", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ pdf_base64 }),
+    body: JSON.stringify({ extracted_text: extractedText }),
   });
 }
 
