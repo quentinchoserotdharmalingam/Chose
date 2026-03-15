@@ -86,10 +86,17 @@ export default function App() {
       const { analysis: sd, proposals: pd } = await analyzeAndPropose(extractedText);
       if (abortRef.current) return;
 
-      // Instant reveal
-      if (sd.c) setCompany(sd.c);
-      if (sd.s) setSummary(sd.s);
-      setFacts(sd.f || []);
+      // Progressive reveal (~2s) — lets user see what was extracted
+      if (sd.c) { setCompany(sd.c); await sleep(500); }
+      if (sd.s) { setSummary(sd.s); await sleep(400); }
+      const allFacts = sd.f || [];
+      for (let i = 0; i < allFacts.length; i++) {
+        await sleep(250);
+        setFacts((prev) => [...prev, allFacts[i]]);
+      }
+      if (abortRef.current) return;
+      await sleep(400);
+
       setPhase(3);
       setProps((pd.p || []).map((p, i) => ({ ...p, id: `p${i}` })));
       setPhase(4);
