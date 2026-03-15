@@ -76,34 +76,29 @@ export default function App() {
     abortRef.current = false;
 
     try {
-      await sleep(600);
-      if (abortRef.current) return;
       setPhase(2);
 
-      // Step 1: Mistral OCR extracts text client-side (bypasses Vercel 4.5MB limit)
+      // Step 1: Mistral OCR extracts text client-side
       const extractedText = await extractPdfText(file);
       if (abortRef.current) return;
 
-      // Step 2: Claude analyzes the extracted text (small payload, fast)
-      const sd = await analyzeText(extractedText);
+      // Step 2: Analyze + Propose IN PARALLEL (both use Haiku = fast)
+      const [sd, proposeResult] = await Promise.all([
+        analyzeText(extractedText),
+        proposePdf(extractedText),
+      ]);
       if (abortRef.current) return;
 
-      if (sd.c) { setCompany(sd.c); await sleep(1200); }
-      if (sd.s) { setSummary(sd.s); await sleep(1000); }
-      const allFacts = sd.f || [];
-      for (let i = 0; i < allFacts.length; i++) {
-        await sleep(900 + i * 200);
-        setFacts((prev) => [...prev, allFacts[i]]);
-      }
+      // Fast reveal (~1s total)
+      if (sd.c) setCompany(sd.c);
+      if (sd.s) setSummary(sd.s);
+      setFacts(sd.f || []);
+      await sleep(300);
       if (abortRef.current) return;
 
-      await sleep(800);
       setPhase(3);
 
-      // Step 2: Proposals from extracted text (no PDF re-upload)
-      const proposeResult = await proposePdf(extractedText);
-      if (abortRef.current) return;
-
+      // Proposals already loaded in parallel
       const pd = proposeResult;
       setProps((pd.p || []).map((p, i) => ({ ...p, id: `p${i}` })));
       setPhase(4);
@@ -167,7 +162,6 @@ export default function App() {
       ]);
       setMsgs([{ role: "assistant", text: "Page générée ! Tu peux l’ajuster ci-dessous." }]);
 
-      await sleep(500);
       setTab("preview");
       setStep("result");
       doSugs(result.html);

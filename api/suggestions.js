@@ -1,4 +1,4 @@
-import { getClient, MODEL } from "./_shared.js";
+import { getClient, MODEL_FAST } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     if (!html) return res.status(400).json({ error: "HTML requis" });
 
     const response = await getClient().messages.create({
-      model: MODEL,
+      model: MODEL_FAST,
       max_tokens: 300,
       system: "Propose 4 améliorations de contenu statique (pas boutons/vidéos/liens). JSON uniquement: [\"s1\",\"s2\",\"s3\",\"s4\"]",
       messages: [{ role: "user", content: `HTML (extrait):\n${html.substring(0, 2000)}` }],

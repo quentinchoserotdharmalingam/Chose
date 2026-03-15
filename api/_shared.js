@@ -1,5 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+// Haiku = fast + cheap (analyze, propose, suggestions)
+// Sonnet = quality (generate, modify)
+const MODEL_FAST = process.env.ANTHROPIC_MODEL_FAST || "claude-haiku-4-5-20251001";
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
 
 let _client;
@@ -8,7 +11,7 @@ function getClient() {
   return _client;
 }
 
-export { getClient, MODEL };
+export { getClient, MODEL, MODEL_FAST };
 
 export const PROMPTS = {
   analyze: `Tu analyses des documents pour proposer des pages d'onboarding. Réponds UNIQUEMENT en JSON compact sans backticks.`,
