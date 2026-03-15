@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { analyzePdf, proposePdf, generatePage, modifyPage, getSuggestions } from "./api.js";
+import { extractPdfText, analyzeText, proposePdf, generatePage, modifyPage, getSuggestions } from "./api.js";
 
 // ── UTILS ──
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -80,13 +80,13 @@ export default function App() {
       if (abortRef.current) return;
       setPhase(2);
 
-      // Step 1: Mistral OCR + Claude analysis
-      const analyzeResult = await analyzePdf(file);
+      // Step 1: Mistral OCR extracts text client-side (bypasses Vercel 4.5MB limit)
+      const extractedText = await extractPdfText(file);
       if (abortRef.current) return;
 
-      // Slow reveal of analysis results
-      const sd = analyzeResult;
-      const extractedText = sd._extracted_text || "";
+      // Step 2: Claude analyzes the extracted text (small payload, fast)
+      const sd = await analyzeText(extractedText);
+      if (abortRef.current) return;
 
       if (sd.c) { setCompany(sd.c); await sleep(1200); }
       if (sd.s) { setSummary(sd.s); await sleep(1000); }
