@@ -76,11 +76,9 @@ export default function App() {
     abortRef.current = false;
 
     try {
-      await sleep(400);
-      if (abortRef.current) return;
       setPhase(2);
 
-      // Step 1: Mistral OCR extracts text client-side (bypasses Vercel 4.5MB limit)
+      // Step 1: Mistral OCR extracts text client-side
       const extractedText = await extractPdfText(file);
       if (abortRef.current) return;
 
@@ -91,18 +89,14 @@ export default function App() {
       ]);
       if (abortRef.current) return;
 
-      // Quick reveal (shorter delays since Haiku is fast)
-      if (sd.c) { setCompany(sd.c); await sleep(600); }
-      if (sd.s) { setSummary(sd.s); await sleep(500); }
-      const allFacts = sd.f || [];
-      for (let i = 0; i < allFacts.length; i++) {
-        await sleep(400);
-        setFacts((prev) => [...prev, allFacts[i]]);
-      }
+      // Fast reveal (~1s total)
+      if (sd.c) setCompany(sd.c);
+      if (sd.s) setSummary(sd.s);
+      setFacts(sd.f || []);
+      await sleep(300);
       if (abortRef.current) return;
 
       setPhase(3);
-      await sleep(400);
 
       // Proposals already loaded in parallel
       const pd = proposeResult;
@@ -168,7 +162,6 @@ export default function App() {
       ]);
       setMsgs([{ role: "assistant", text: "Page générée ! Tu peux l’ajuster ci-dessous." }]);
 
-      await sleep(500);
       setTab("preview");
       setStep("result");
       doSugs(result.html);
