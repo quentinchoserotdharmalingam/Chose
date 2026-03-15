@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { extractPdfText, analyzeText, proposePdf, generatePage, modifyPage, getSuggestions } from "./api.js";
+import { extractPdfText, analyzeAndPropose, generatePage, modifyPage, getSuggestions } from "./api.js";
+import { PAGE_CSS } from "./page-styles.js";
 
 // ── UTILS ──
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -52,7 +53,7 @@ export default function App() {
       try {
         const d = iRef.current.contentDocument;
         d.open();
-        d.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:16px;font-family:system-ui,sans-serif;background:#f8f9fa;}</style></head><body>${html}</body></html>`);
+        d.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${PAGE_CSS}</style></head><body>${html}</body></html>`);
         d.close();
       } catch { /* cross-origin */ }
     }
@@ -82,24 +83,35 @@ export default function App() {
       const extractedText = await extractPdfText(file);
       if (abortRef.current) return;
 
-      // Step 2: Analyze + Propose IN PARALLEL (both use Haiku = fast)
-      const [sd, proposeResult] = await Promise.all([
-        analyzeText(extractedText),
-        proposePdf(extractedText),
-      ]);
+      // Step 2: Launch API call AND reveal OCR results IN PARALLEL
+      const apiPromise = analyzeAndPropose(extractedText);
+
+      // While API is working, show a quick preview of OCR content
+      // Extract a rough company name and key phrases from OCR text
+      const lines = extractedText.split("\n").filter(l => l.trim().length > 3);
+      const roughTitle = lines[0]?.substring(0, 80) || "Document";
+      setCompany(roughTitle);
+      await sleep(500);
+      setSummary("Analyse IA en cours...");
+      await sleep(400);
+      // Show first few meaningful lines as "facts" while waiting
+      const previewFacts = lines.slice(1, 5).map(l => l.substring(0, 40).trim()).filter(Boolean);
+      for (let i = 0; i < previewFacts.length; i++) {
+        await sleep(250);
+        setFacts((prev) => [...prev, previewFacts[i]]);
+      }
+
+      // Now wait for the real API result
+      const { analysis: sd, proposals: pd } = await apiPromise;
       if (abortRef.current) return;
 
-      // Fast reveal (~1s total)
+      // Replace rough preview with real analysis
       if (sd.c) setCompany(sd.c);
       if (sd.s) setSummary(sd.s);
       setFacts(sd.f || []);
-      await sleep(300);
-      if (abortRef.current) return;
-
       setPhase(3);
+      await sleep(300);
 
-      // Proposals already loaded in parallel
-      const pd = proposeResult;
       setProps((pd.p || []).map((p, i) => ({ ...p, id: `p${i}` })));
       setPhase(4);
       setStep("proposals");

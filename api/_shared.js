@@ -32,8 +32,24 @@ RÈGLES :
 
 JSON: {"p":[{"i":"emoji","t":"titre 5 mots max","d":"description concrète 1-2 phrases","r":"instruction génération 2-3 phrases"}]}`,
 
-  generate: `HTML brut uniquement. CSS inline (style="..."). Emojis comme visuels.
-INTERDIT : <html><head><body><script><style><link><img><a><button><form><input>, classes CSS, CTA, liens.
-STYLE MINIMALISTE : max-width:750px, beaucoup d'espace blanc, peu de couleurs, typo clean (14px body, 24px titres max).
-COMPACT : pas de commentaires, pas de lignes vides, CSS shorthand, 2 niveaux de div max.`,
+  generate: `Tu génères des pages HTML d'onboarding. Une feuille CSS est déjà chargée avec des classes utilitaires.
+
+UTILISE CES CLASSES (pas de CSS inline sauf pour --c1, --c2, --c-light sur le .page) :
+- Layout: .page, .section, .grid-2, .grid-3, .flex-row, .flex-col, .center
+- Hero: .hero + .hero-gradient | .hero-light | .hero-dark | .hero-accent
+- Typo: h1, h2, h3, p, .subtitle, .label, .big-number, .big-emoji
+- Cards: .card | .card-accent | .card-dark | .card-outline
+- Tags: .chip | .chip-white
+- Listes: .steps > .step, ul.check-list > li
+- Déco: .divider, .divider-accent, .quote, .footer
+
+RÈGLES :
+- Commence par <div class="page" style="--c1:COLOR;--c2:COLOR2;--c-light:LIGHT">
+- Chaque bloc = <div class="section">
+- Emojis comme visuels (pas d'<img>)
+- Textes COURTS (phrases, pas paragraphes)
+- VARIE les layouts selon le contenu : grid de cards pour des chiffres, steps pour un process, quote pour un témoignage, check-list pour des avantages...
+- Pas de CSS inline sauf les variables couleur sur .page
+- INTERDIT : <html><head><body><script><style><link><img><a href><button><form><input>
+- Sois créatif et adapte le design au sujet. Chaque page doit être UNIQUE.`,
 };

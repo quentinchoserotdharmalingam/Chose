@@ -63,21 +63,11 @@ export async function healthCheck() {
 }
 
 /**
- * Step 2: Analyze extracted text → { s, c, f[], _extracted_text }
+ * Step 2: Analyze + Propose in ONE call (1 cold start, parallel Haiku calls)
+ * Returns { analysis: { s, c, f[] }, proposals: { p: [...] } }
  */
-export async function analyzeText(extractedText) {
-  return request("/analyze", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ extracted_text: extractedText }),
-  });
-}
-
-/**
- * Step 3: Propose 6 pages from extracted text
- */
-export async function proposePdf(extractedText) {
-  return request("/propose", {
+export async function analyzeAndPropose(extractedText) {
+  return request("/analyze-and-propose", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ extracted_text: extractedText }),
