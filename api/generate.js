@@ -12,11 +12,15 @@ export default async function handler(req, res) {
 ${prompt}
 ${company ? `Entreprise: "${company}".` : ""} Couleur: ${color || "#6366f1"}.
 
-Génère la page en suivant la RECETTE du system prompt. RAPPEL CRITIQUE : les chiffres clés en .grid-2/.grid-3 de cards, JAMAIS empilés verticalement.`;
+INSTRUCTIONS :
+- Extrais un MAXIMUM d'informations pertinentes du contenu fourni (chiffres, noms, faits, dates, lieux…)
+- Génère une page RICHE avec 5-7 sections variées, pleine de contenu CONCRET issu du document
+- Suis la RECETTE du system prompt : chiffres en .grid de .stat, alterner blanc/coloré/sombre
+- Chaque section doit apporter de VRAIES informations — pas de texte générique ou placeholder`;
 
     const response = await getClient().messages.create({
       model: MODEL,
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: PROMPTS.generate,
       messages: [{ role: "user", content: userPrompt }],
     });

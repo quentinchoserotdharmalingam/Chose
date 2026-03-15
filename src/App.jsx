@@ -23,6 +23,7 @@ export default function App() {
   const [summary, setSummary] = useState("");
   const [company, setCompany] = useState("");
   const [facts, setFacts] = useState([]);
+  const [ocrText, setOcrText] = useState("");
   const [props, setProps] = useState([]);
   const [sel, setSel] = useState(new Set());
   const [color, setColor] = useState("#6366f1");
@@ -82,6 +83,7 @@ export default function App() {
       // Step 1: Mistral OCR extracts text client-side
       const extractedText = await extractPdfText(file);
       if (abortRef.current) return;
+      setOcrText(extractedText);
 
       // Step 2: Launch API call AND reveal OCR results IN PARALLEL
       const apiPromise = analyzeAndPropose(extractedText);
@@ -152,6 +154,7 @@ export default function App() {
         summary ? `Document: ${summary}` : "",
         company ? `Titre/Entreprise: ${company}` : "",
         facts.length > 0 ? `Points clés: ${facts.join(", ")}` : "",
+        ocrText ? `\n\nCONTENU COMPLET DU DOCUMENT :\n${ocrText.substring(0, 6000)}` : "",
       ].filter(Boolean).join(". ");
 
       const result = await generatePage({
@@ -228,7 +231,7 @@ export default function App() {
     setStep("upload"); setSel(new Set()); setFile(null); setFname("");
     setHtml(""); setMsgs([]); setHist([]); setErr("");
     setDraft(""); setTab("preview"); setSugs([]); setCompany("");
-    setColor("#6366f1"); setSummary(""); setFacts([]); setProps([]);
+    setColor("#6366f1"); setSummary(""); setFacts([]); setOcrText(""); setProps([]);
     setPct(0); setPhase(0); setGenPhase("");
   };
 
