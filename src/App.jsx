@@ -479,18 +479,19 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
                   <div key={i} style={{ padding: "9px 12px", borderRadius: 11, fontSize: 13, lineHeight: 1.5, maxWidth: "85%", alignSelf: m.role === "user" ? "flex-end" : "flex-start", background: m.role === "user" ? K.c : K.a, color: m.role === "user" ? K.w : K.t, border: m.role === "user" ? "none" : `1px solid ${K.b}`, wordBreak: "break-word", animation: "fu 0.2s" }}>{m.text}</div>
                 ))}
                 {busy && <div style={{ padding: "9px 12px", borderRadius: 11, fontSize: 13, alignSelf: "flex-start", background: K.a, border: `1px solid ${K.b}`, color: K.m, animation: "pu 2.5s ease infinite" }}>Modification…</div>}
+                {sugs.length > 0 && !busy && (
+                  <div style={{ animation: "fu 0.3s" }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>{"💡"} Suggestions</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {sugs.map((s, i) => (
+                        <button key={i} onClick={() => { setMsgs((p) => [...p, { role: "user", text: s }]); setSugs([]); modify(s); }} style={{ padding: "10px 14px", borderRadius: 12, border: `1px solid ${K.b}`, background: K.w, color: K.t, fontSize: 13, cursor: "pointer", textAlign: "left", lineHeight: 1.5 }}>{s}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {loadS && !busy && sugs.length === 0 && <div style={{ fontSize: 11, color: K.m, animation: "pu 2.5s ease infinite" }}>Suggestions…</div>}
                 <div ref={eRef} />
               </div>
-              {sugs.length > 0 && !busy && (
-                <div style={{ padding: "8px 12px", borderTop: `1px solid ${K.b}`, background: K.a, flexShrink: 0, overflow: "hidden" }}>
-                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
-                    {sugs.map((s, i) => (
-                      <button key={i} onClick={() => setDraft(s)} style={{ padding: "7px 12px", borderRadius: 16, border: `1px solid ${K.b}`, background: K.w, color: K.t, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, lineHeight: 1.3 }}>{s.length > 50 ? s.substring(0, 47) + "…" : s}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {loadS && !busy && sugs.length === 0 && <div style={{ padding: "8px 12px", borderTop: `1px solid ${K.b}`, fontSize: 11, color: K.m, animation: "pu 2.5s ease infinite", flexShrink: 0 }}>Suggestions…</div>}
               <div style={{ padding: "10px 12px", borderTop: `1px solid ${K.b}`, display: "flex", gap: 8, flexShrink: 0, background: K.w }}>
                 <textarea rows={1} style={{ flex: 1, padding: "10px", borderRadius: 10, border: `1px solid ${draft ? K.c : K.b}`, color: K.t, fontSize: 14, outline: "none", resize: "none", lineHeight: 1.4, background: draft ? K.l + "40" : K.w }} placeholder="Décris ta modification…" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
                 <button disabled={busy || !draft.trim()} onClick={send} style={{ padding: "10px 15px", borderRadius: 10, border: "none", background: (busy || !draft.trim()) ? K.a : K.c, color: (busy || !draft.trim()) ? K.m : K.w, fontSize: 16, cursor: (busy || !draft.trim()) ? "not-allowed" : "pointer", flexShrink: 0, alignSelf: "flex-end" }}>{"➤"}</button>
