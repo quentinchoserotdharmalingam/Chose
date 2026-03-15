@@ -23,6 +23,7 @@ export default function App() {
   const [summary, setSummary] = useState("");
   const [company, setCompany] = useState("");
   const [facts, setFacts] = useState([]);
+  const [ocrText, setOcrText] = useState("");
   const [props, setProps] = useState([]);
   const [sel, setSel] = useState(new Set());
   const [color, setColor] = useState("#6366f1");
@@ -82,6 +83,7 @@ export default function App() {
       // Step 1: Mistral OCR extracts text client-side
       const extractedText = await extractPdfText(file);
       if (abortRef.current) return;
+      setOcrText(extractedText);
 
       // Step 2: Launch API call AND reveal OCR results IN PARALLEL
       const apiPromise = analyzeAndPropose(extractedText);
@@ -152,6 +154,7 @@ export default function App() {
         summary ? `Document: ${summary}` : "",
         company ? `Titre/Entreprise: ${company}` : "",
         facts.length > 0 ? `Points clés: ${facts.join(", ")}` : "",
+        ocrText ? `\n\nCONTENU COMPLET DU DOCUMENT :\n${ocrText.substring(0, 6000)}` : "",
       ].filter(Boolean).join(". ");
 
       const result = await generatePage({
@@ -228,7 +231,7 @@ export default function App() {
     setStep("upload"); setSel(new Set()); setFile(null); setFname("");
     setHtml(""); setMsgs([]); setHist([]); setErr("");
     setDraft(""); setTab("preview"); setSugs([]); setCompany("");
-    setColor("#6366f1"); setSummary(""); setFacts([]); setProps([]);
+    setColor("#6366f1"); setSummary(""); setFacts([]); setOcrText(""); setProps([]);
     setPct(0); setPhase(0); setGenPhase("");
   };
 
@@ -455,17 +458,13 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
 
       {/* RESULT */}
       {step === "result" && (<>
-        <div style={{ display: "flex", borderBottom: `1px solid ${K.b}`, background: K.w, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${K.b}`, background: K.w, flexShrink: 0, padding: "0 8px" }}>
           {[{ id: "preview", l: "👁 Aperçu" }, { id: "chat", l: "💬 Ajuster" }, { id: "code", l: "</> HTML" }].map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "11px 4px", border: "none", background: "transparent", color: tab === t.id ? K.c : K.m, fontSize: 13, fontWeight: tab === t.id ? 700 : 500, cursor: "pointer", borderBottom: tab === t.id ? `2px solid ${K.c}` : "2px solid transparent" }}>{t.l}</button>
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: "10px 8px", border: "none", background: "transparent", color: tab === t.id ? K.c : K.m, fontSize: 13, fontWeight: tab === t.id ? 700 : 500, cursor: "pointer", borderBottom: tab === t.id ? `2px solid ${K.c}` : "2px solid transparent" }}>{t.l}</button>
           ))}
-        </div>
-        <div style={{ display: "flex", gap: 6, padding: "7px 12px", borderBottom: `1px solid ${K.b}`, background: K.w, flexShrink: 0, alignItems: "center" }}>
-          <div style={{ flex: 1, fontSize: 11, color: K.s, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {props.filter((p) => sel.has(p.id)).map((p) => p.i + " " + p.t).join(" + ")}
-          </div>
-          <button onClick={() => { setStep("proposals"); setHtml(""); setMsgs([]); setSugs([]); setPct(0); setDraft(""); setErr(""); }} style={{ padding: "6px 9px", borderRadius: 7, border: `1px solid ${K.b}`, background: K.w, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{"🔄"}</button>
-          <button onClick={cp} style={{ padding: "6px 11px", borderRadius: 7, border: "none", background: copied ? K.ok : K.c, color: K.w, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{copied ? "✓" : "📋 Copier"}</button>
+          <div style={{ flex: 1 }} />
+          <button onClick={() => { setStep("proposals"); setHtml(""); setMsgs([]); setSugs([]); setPct(0); setDraft(""); setErr(""); }} style={{ padding: "5px 8px", borderRadius: 6, border: `1px solid ${K.b}`, background: K.w, fontSize: 11, cursor: "pointer" }}>{"🔄"}</button>
+          <button onClick={cp} style={{ marginLeft: 4, padding: "5px 10px", borderRadius: 6, border: "none", background: copied ? K.ok : K.c, color: K.w, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{copied ? "✓" : "📋"}</button>
         </div>
         <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
           {tab === "preview" && (
@@ -480,21 +479,20 @@ textarea::placeholder,input::placeholder{color:${K.m}}input,textarea,button{font
                   <div key={i} style={{ padding: "9px 12px", borderRadius: 11, fontSize: 13, lineHeight: 1.5, maxWidth: "85%", alignSelf: m.role === "user" ? "flex-end" : "flex-start", background: m.role === "user" ? K.c : K.a, color: m.role === "user" ? K.w : K.t, border: m.role === "user" ? "none" : `1px solid ${K.b}`, wordBreak: "break-word", animation: "fu 0.2s" }}>{m.text}</div>
                 ))}
                 {busy && <div style={{ padding: "9px 12px", borderRadius: 11, fontSize: 13, alignSelf: "flex-start", background: K.a, border: `1px solid ${K.b}`, color: K.m, animation: "pu 2.5s ease infinite" }}>Modification…</div>}
-                {sugs.length > 0 && !busy && (
-                  <div style={{ alignSelf: "flex-start", maxWidth: "95%", animation: "fu 0.3s" }}>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 5 }}>{"💡"} Suggestions</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                      {sugs.map((s, i) => (
-                        <button key={i} onClick={() => setDraft(s)} style={{ padding: "8px 11px", borderRadius: 9, border: `1px solid ${K.b}`, background: K.w, color: K.t, fontSize: 12, cursor: "pointer", textAlign: "left", lineHeight: 1.4 }}>{s}</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {loadS && !busy && sugs.length === 0 && <div style={{ fontSize: 11, color: K.m, animation: "pu 2.5s ease infinite" }}>Suggestions…</div>}
                 <div ref={eRef} />
               </div>
+              {sugs.length > 0 && !busy && (
+                <div style={{ padding: "8px 12px", borderTop: `1px solid ${K.b}`, background: K.a, flexShrink: 0, overflow: "hidden" }}>
+                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
+                    {sugs.map((s, i) => (
+                      <button key={i} onClick={() => setDraft(s)} style={{ padding: "7px 12px", borderRadius: 16, border: `1px solid ${K.b}`, background: K.w, color: K.t, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, lineHeight: 1.3 }}>{s.length > 50 ? s.substring(0, 47) + "…" : s}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {loadS && !busy && sugs.length === 0 && <div style={{ padding: "8px 12px", borderTop: `1px solid ${K.b}`, fontSize: 11, color: K.m, animation: "pu 2.5s ease infinite", flexShrink: 0 }}>Suggestions…</div>}
               <div style={{ padding: "10px 12px", borderTop: `1px solid ${K.b}`, display: "flex", gap: 8, flexShrink: 0, background: K.w }}>
-                <textarea rows={2} style={{ flex: 1, padding: "10px", borderRadius: 10, border: `1px solid ${draft ? K.c : K.b}`, color: K.t, fontSize: 14, outline: "none", resize: "none", lineHeight: 1.4, background: draft ? K.l + "40" : K.w }} placeholder="Sélectionne une suggestion ou écris…" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
+                <textarea rows={1} style={{ flex: 1, padding: "10px", borderRadius: 10, border: `1px solid ${draft ? K.c : K.b}`, color: K.t, fontSize: 14, outline: "none", resize: "none", lineHeight: 1.4, background: draft ? K.l + "40" : K.w }} placeholder="Décris ta modification…" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
                 <button disabled={busy || !draft.trim()} onClick={send} style={{ padding: "10px 15px", borderRadius: 10, border: "none", background: (busy || !draft.trim()) ? K.a : K.c, color: (busy || !draft.trim()) ? K.m : K.w, fontSize: 16, cursor: (busy || !draft.trim()) ? "not-allowed" : "pointer", flexShrink: 0, alignSelf: "flex-end" }}>{"➤"}</button>
               </div>
             </div>
