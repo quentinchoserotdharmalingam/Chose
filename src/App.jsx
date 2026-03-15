@@ -88,7 +88,12 @@ export default function App() {
 
       // While API is working, show a quick preview of OCR content
       // Extract a rough company name and key phrases from OCR text
-      const lines = extractedText.split("\n").filter(l => l.trim().length > 3);
+      // Filter out markdown image refs, headers markers, and very short lines
+      const lines = extractedText.split("\n")
+        .map(l => l.trim())
+        .filter(l => l.length > 3 && !/^!\[.*\]\(.*\)$/.test(l) && !/^---+$/.test(l) && !/^\|/.test(l))
+        .map(l => l.replace(/^#+\s*/, "").replace(/!\[.*?\]\(.*?\)/g, "").trim())
+        .filter(l => l.length > 3);
       const roughTitle = lines[0]?.substring(0, 80) || "Document";
       setCompany(roughTitle);
       await sleep(500);
