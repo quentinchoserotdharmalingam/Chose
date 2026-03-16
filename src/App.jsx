@@ -69,6 +69,7 @@ export default function App() {
   const [summary, setSummary] = useState("");
   const [company, setCompany] = useState("");
   const [facts, setFacts] = useState([]);
+  const [ocrText, setOcrText] = useState("");
   const [props, setProps] = useState([]);
   const [sel, setSel] = useState(new Set());
   const [color, setColor] = useState("#E8604C");
@@ -130,20 +131,19 @@ export default function App() {
       setPhase(2);
       const extractedText = await extractPdfText(file);
       if (abortRef.current) return;
+      setOcrText(extractedText);
 
       const apiPromise = analyzeAndPropose(extractedText);
 
-      const lines = extractedText.split("\n")
-        .map(l => l.trim())
-        .filter(l => l.length > 3 && !/^!\[.*\]\(.*\)$/.test(l) && !/^---+$/.test(l) && !/^\|/.test(l))
-        .map(l => l.replace(/^#+\s*/, "").replace(/!\[.*?\]\(.*?\)/g, "").trim())
-        .filter(l => l.length > 3);
+      // While API is working, show a quick preview of OCR content
+      const lines = extractedText.split("\n").filter(l => l.trim().length > 3 && !l.includes("![") && !l.match(/^[\s#*\-|>]+$/) && !l.match(/^\s*img-?\d/i));
       const roughTitle = lines[0]?.substring(0, 80) || "Document";
       setCompany(roughTitle);
       await sleep(500);
       setSummary("Analyse IA en cours...");
       await sleep(400);
-      const previewFacts = lines.slice(1, 5).map(l => l.substring(0, 40).trim()).filter(Boolean);
+      // Show first few meaningful lines as "facts" while waiting
+      const previewFacts = lines.slice(1, 5).map(l => l.substring(0, 40).trim()).filter(l => l && !l.includes("img"));
       for (let i = 0; i < previewFacts.length; i++) {
         await sleep(250);
         setFacts((prev) => [...prev, previewFacts[i]]);
@@ -197,6 +197,7 @@ export default function App() {
         summary ? `Document: ${summary}` : "",
         company ? `Titre/Entreprise: ${company}` : "",
         facts.length > 0 ? `Points clés: ${facts.join(", ")}` : "",
+        ocrText ? `\n\nCONTENU COMPLET DU DOCUMENT :\n${ocrText.substring(0, 6000)}` : "",
       ].filter(Boolean).join(". ");
 
       const result = await generatePage({ prompt: context_str, context: docContext, company, color });
@@ -270,7 +271,7 @@ export default function App() {
     setStep("upload"); setSel(new Set()); setFile(null); setFname("");
     setHtml(""); setMsgs([]); setHist([]); setErr("");
     setDraft(""); setTab("preview"); setSugs([]); setCompany("");
-    setColor("#E8604C"); setSummary(""); setFacts([]); setProps([]);
+    setColor("#E8604C"); setSummary(""); setFacts([]); setOcrText(""); setProps([]);
     setPct(0); setPhase(0); setGenPhase("");
   };
 
@@ -762,14 +763,14 @@ tr:hover td{background:${K.tableHover}}`}</style>
                       {busy && <div style={{ padding: "10px 14px", borderRadius: 12, fontSize: 13, alignSelf: "flex-start", background: K.bg, border: `1px solid ${K.b}`, color: K.m, animation: "pu 2.5s ease infinite" }}>Modification…</div>}
 
                       {sugs.length > 0 && !busy && (
-                        <div style={{ alignSelf: "flex-start", maxWidth: "95%", animation: "fu 0.3s" }}>
+                        <div style={{ animation: "fu 0.3s" }}>
                           <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>Suggestions</div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                             {sugs.map((s, i) => (
-                              <button key={i} onClick={() => setDraft(s)} style={{
-                                padding: "9px 12px", borderRadius: 10, border: `1px solid ${K.b}`,
-                                background: K.w, color: K.t, fontSize: 12, cursor: "pointer",
-                                textAlign: "left", lineHeight: 1.45, transition: "border-color 0.15s",
+                              <button key={i} onClick={() => { setMsgs((p) => [...p, { role: "user", text: s }]); setSugs([]); modify(s); }} style={{
+                                padding: "10px 14px", borderRadius: 12, border: `1px solid ${K.b}`,
+                                background: K.w, color: K.t, fontSize: 13, cursor: "pointer",
+                                textAlign: "left", lineHeight: 1.5,
                               }}>{s}</button>
                             ))}
                           </div>
@@ -780,13 +781,13 @@ tr:hover td{background:${K.tableHover}}`}</style>
                     </div>
 
                     <div style={{ padding: "12px 14px", borderTop: `1px solid ${K.b}`, display: "flex", gap: 10, flexShrink: 0, background: K.w }}>
-                      <textarea rows={2} style={{
+                      <textarea rows={1} style={{
                         flex: 1, padding: "10px 12px", borderRadius: 10,
                         border: `1px solid ${draft ? K.c : K.b}`, color: K.t,
                         fontSize: 14, outline: "none", resize: "none", lineHeight: 1.45,
                         background: draft ? K.l + "40" : K.w,
                         transition: "border-color 0.15s",
-                      }} placeholder="Décris les modifications souhaitées…" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
+                      }} placeholder="Décris ta modification…" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
                       <button disabled={busy || !draft.trim()} onClick={send} style={{
                         padding: "10px 16px", borderRadius: 10, border: "none",
                         background: (busy || !draft.trim()) ? K.a : K.c,

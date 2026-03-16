@@ -12,16 +12,15 @@ export default async function handler(req, res) {
 ${prompt}
 ${company ? `Entreprise: "${company}".` : ""} Couleur: ${color || "#6366f1"}.
 
-Page MINIMALISTE et ÉLÉGANTE pour un nouvel employé :
-- 1 hero (gradient + emoji + titre + 1 phrase)
-- 2 sections courtes (chiffres en gros, textes en 1-2 lignes, cards simples)
-- 1 footer (1 ligne)
-
-Chaque section = 1 div. Textes TRÈS COURTS (phrases, pas paragraphes). Beaucoup d'espace blanc.`;
+INSTRUCTIONS :
+- Extrais un MAXIMUM d'informations pertinentes du contenu fourni (chiffres, noms, faits, dates, lieux…)
+- Génère une page RICHE avec 5-7 sections variées, pleine de contenu CONCRET issu du document
+- Suis la RECETTE du system prompt : chiffres en .grid de .stat, alterner blanc/coloré/sombre
+- Chaque section doit apporter de VRAIES informations — pas de texte générique ou placeholder`;
 
     const response = await getClient().messages.create({
       model: MODEL,
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: PROMPTS.generate,
       messages: [{ role: "user", content: userPrompt }],
     });
