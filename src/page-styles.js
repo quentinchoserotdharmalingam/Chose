@@ -3,7 +3,7 @@
  * The LLM only generates HTML with these utility classes — no inline CSS needed.
  */
 export const PAGE_CSS = `
-/* Reset & Base */
+/* ─── Reset & Base ─── */
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;color:#1e1e2e;background:#f5f5f7;line-height:1.7;padding:0;margin:0;-webkit-font-smoothing:antialiased}
 
