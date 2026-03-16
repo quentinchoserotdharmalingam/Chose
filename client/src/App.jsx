@@ -63,12 +63,24 @@ export default function App() {
   const [loadS, setLoadS] = useState(false);
   const [phase, setPhase] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const eRef = useRef(null);
   const iRef = useRef(null);
   const fRef = useRef(null);
   const timerRef = useRef(null);
   const abortRef = useRef(false);
+
+  useEffect(() => {
+    const onResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) setMobileMenuOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => { eRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
@@ -261,12 +273,25 @@ export default function App() {
 textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font-family:inherit}`}</style>
 
       {/* APP SHELL: SIDEBAR + MAIN */}
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
+
+        {/* MOBILE OVERLAY */}
+        {isMobile && mobileMenuOpen && (
+          <div onClick={() => setMobileMenuOpen(false)} style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 90,
+            animation: "fu 0.2s ease",
+          }} />
+        )}
 
         {/* SIDEBAR */}
         <div style={{
-          width: sidebarW, flexShrink: 0, background: K.w, borderRight: `1px solid ${K.b}`,
-          display: "flex", flexDirection: "column", transition: "width 0.3s ease-in-out", overflow: "hidden",
+          width: isMobile ? 260 : sidebarW, flexShrink: 0, background: K.w, borderRight: `1px solid ${K.b}`,
+          display: "flex", flexDirection: "column", transition: "transform 0.3s ease-in-out, width 0.3s ease-in-out", overflow: "hidden",
+          ...(isMobile ? {
+            position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 100,
+            transform: mobileMenuOpen ? "translateX(0)" : "translateX(-100%)",
+            boxShadow: mobileMenuOpen ? SHADOW[4] : "none",
+          } : {}),
         }}>
           {/* Logo + collapse icon */}
           <div style={{ padding: "16px 12px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -282,7 +307,7 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
                 </svg>
               </div>
             </div>
-            {!sidebarCollapsed && (
+            {!isMobile && !sidebarCollapsed && (
               <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{
                 width: 28, height: 28, borderRadius: 6, border: `1px solid ${K.b}`,
                 background: K.w, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
@@ -291,7 +316,7 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><line x1="5" y1="1" x2="5" y2="13" stroke="currentColor" strokeWidth="1.5"/></svg>
               </button>
             )}
-            {sidebarCollapsed && (
+            {!isMobile && sidebarCollapsed && (
               <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{
                 position: "absolute", left: sidebarW - 14, top: 28, width: 28, height: 28, borderRadius: 6,
                 border: `1px solid ${K.b}`, background: K.w, cursor: "pointer",
@@ -301,10 +326,17 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><line x1="5" y1="1" x2="5" y2="13" stroke="currentColor" strokeWidth="1.5"/></svg>
               </button>
             )}
+            {isMobile && (
+              <button onClick={() => setMobileMenuOpen(false)} style={{
+                width: 28, height: 28, borderRadius: 6, border: `1px solid ${K.b}`,
+                background: K.w, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, color: K.s, flexShrink: 0,
+              }}>✕</button>
+            )}
           </div>
 
           {/* Back link */}
-          {!sidebarCollapsed && (
+          {(!sidebarCollapsed || isMobile) && (
             <div style={{
               padding: "6px 16px 12px", display: "flex", alignItems: "center", gap: 6,
               fontSize: 13, color: K.s, cursor: "pointer", fontWeight: 500,
@@ -316,10 +348,10 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
           {/* Nav items */}
           <div style={{ flex: 1, overflow: "auto", padding: "0 8px" }}>
             {NAV_ITEMS.map((item, i) => (
-              <div key={i} style={{
+              <div key={i} onClick={() => isMobile && setMobileMenuOpen(false)} style={{
                 display: "flex", alignItems: "center", gap: 10,
-                padding: sidebarCollapsed ? "10px 0" : "10px 12px",
-                justifyContent: sidebarCollapsed ? "center" : "flex-start",
+                padding: (sidebarCollapsed && !isMobile) ? "10px 0" : "10px 12px",
+                justifyContent: (sidebarCollapsed && !isMobile) ? "center" : "flex-start",
                 borderRadius: 8, marginBottom: 2, cursor: "pointer",
                 background: item.active ? K.c : "transparent",
                 color: item.active ? K.w : K.t,
@@ -327,7 +359,7 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
                 transition: "all 0.2s ease-in-out",
               }}>
                 <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {!sidebarCollapsed && <span>{item.label}</span>}
+                {(!sidebarCollapsed || isMobile) && <span>{item.label}</span>}
               </div>
             ))}
           </div>
@@ -342,7 +374,7 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 13, fontWeight: 600, color: "#7c3aed", flexShrink: 0,
             }}>N</div>
-            {!sidebarCollapsed && (
+            {(!sidebarCollapsed || isMobile) && (
               <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: K.t }}>Nathaniel</div>
                 <span style={{ fontSize: 11, color: K.s, cursor: "pointer" }}>{"\u25B4"}</span>
@@ -356,16 +388,29 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
 
           {/* TOP BAR */}
           <div style={{
-            padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: isMobile ? "12px 16px" : "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between",
             borderBottom: `1px solid ${K.b}`, background: K.w, flexShrink: 0,
           }}>
-            <div>
-              <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.5 }}>Contenu IA</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {isMobile && (
+                <button onClick={() => setMobileMenuOpen(true)} style={{
+                  width: 36, height: 36, borderRadius: 8, border: `1px solid ${K.b}`,
+                  background: K.w, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M3 5h12M3 9h12M3 13h12" stroke={K.t} strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              )}
+              <div>
+              <h1 style={{ fontSize: isMobile ? 18 : 24, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.5 }}>Contenu IA</h1>
               {step !== "upload" && (
                 <div style={{ fontSize: 12, color: K.s, fontWeight: 400 }}>
                   {step === "analyzing" ? "Analyse en cours\u2026" : step === "proposals" ? `${props.length} propositions` : step === "generating" ? "G\u00e9n\u00e9ration\u2026" : "R\u00e9sultat"}
                 </div>
               )}
+            </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {!["upload", "analyzing", "generating"].includes(step) && (
@@ -389,7 +434,7 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
 
           {/* UPLOAD */}
           {step === "upload" && (
-            <div style={{ flex: 1, overflow: "auto", padding: "40px 24px", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
+            <div style={{ flex: 1, overflow: "auto", padding: isMobile ? "24px 16px" : "40px 24px", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
               <div style={{ maxWidth: 460, width: "100%", textAlign: "center" }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>{"\u2728"}</div>
                 <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 6, letterSpacing: "-0.02em" }}>Transforme ton PDF</h2>
@@ -504,7 +549,7 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
 
           {/* PROPOSALS */}
           {step === "proposals" && (
-            <div style={{ flex: 1, overflow: "auto", padding: "20px 24px" }}>
+            <div style={{ flex: 1, overflow: "auto", padding: isMobile ? "16px" : "20px 24px" }}>
               <div style={{ maxWidth: 500, margin: "0 auto" }}>
                 <div style={{
                   padding: "16px", borderRadius: 12, background: K.l, marginBottom: 16,
@@ -688,15 +733,15 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
               ))}
             </div>
             <div style={{
-              display: "flex", gap: 8, padding: "10px 16px", borderBottom: `1px solid ${K.b}`,
-              background: K.w, flexShrink: 0, alignItems: "center",
+              display: "flex", gap: 8, padding: isMobile ? "8px 12px" : "10px 16px", borderBottom: `1px solid ${K.b}`,
+              background: K.w, flexShrink: 0, alignItems: "center", flexWrap: isMobile ? "wrap" : "nowrap",
             }}>
-              <div style={{
+              {!isMobile && <div style={{
                 flex: 1, fontSize: 12, color: K.s, fontWeight: 500, overflow: "hidden",
                 textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em",
               }}>
                 {props.filter((p) => sel.has(p.id)).map((p) => p.i + " " + p.t).join(" + ")}
-              </div>
+              </div>}
               <button onClick={() => { setStep("proposals"); setHtml(""); setMsgs([]); setSugs([]); setPct(0); setDraft(""); setErr(""); }} style={{
                 padding: "6px 12px", borderRadius: 8, border: `1px solid ${K.b}`,
                 background: K.w, fontSize: 12, fontWeight: 500, cursor: "pointer",
