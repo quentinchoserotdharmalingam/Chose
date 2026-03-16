@@ -25,7 +25,7 @@ const SHADOW = {
 
 const NAV_ITEMS = [
   { icon: "\uD83D\uDCC4", label: "Documents" },
-  { icon: "\uD83C\uDF93", label: "Formations", active: true },
+  { icon: "\uD83C\uDF93", label: "Formations" },
   { icon: "\uD83D\uDCCB", label: "Questionnaires" },
   { icon: "\u2753", label: "Quiz" },
   { icon: "\uD83D\uDCC5", label: "\u00C9v\u00E9nements" },
@@ -35,6 +35,7 @@ const NAV_ITEMS = [
   { icon: "\u2709\uFE0F", label: "Emails" },
   { icon: "\u26A1", label: "Actions" },
   { icon: "\uD83C\uDFC6", label: "D\u00E9fis" },
+  { icon: "\u2728", label: "Contenu IA", active: true },
 ];
 
 // ── MAIN COMPONENT ──
@@ -267,26 +268,50 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
           width: sidebarW, flexShrink: 0, background: K.w, borderRight: `1px solid ${K.b}`,
           display: "flex", flexDirection: "column", transition: "width 0.3s ease-in-out", overflow: "hidden",
         }}>
-          {/* Logo */}
-          <div style={{ padding: "16px 16px 12px", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 12, background: K.c, flexShrink: 0,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 20, fontWeight: 700, color: K.w,
-            }}>H</div>
-            {!sidebarCollapsed && <span style={{ fontSize: 15, fontWeight: 600, color: K.t, whiteSpace: "nowrap" }}>HeyTeam</span>}
+          {/* Logo + collapse icon */}
+          <div style={{ padding: "16px 12px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 14, background: K.c, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(255,96,88,0.25)",
+              }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" fill="#fff" fillOpacity="0.25"/>
+                  <path d="M9 11h6M9 14h4M12 2v5" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+            {!sidebarCollapsed && (
+              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{
+                width: 28, height: 28, borderRadius: 6, border: `1px solid ${K.b}`,
+                background: K.w, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 12, color: K.s, flexShrink: 0, transition: "all 0.2s",
+              }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><line x1="5" y1="1" x2="5" y2="13" stroke="currentColor" strokeWidth="1.5"/></svg>
+              </button>
+            )}
+            {sidebarCollapsed && (
+              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{
+                position: "absolute", left: sidebarW - 14, top: 28, width: 28, height: 28, borderRadius: 6,
+                border: `1px solid ${K.b}`, background: K.w, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 12, color: K.s, zIndex: 10, boxShadow: SHADOW[1],
+              }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><line x1="5" y1="1" x2="5" y2="13" stroke="currentColor" strokeWidth="1.5"/></svg>
+              </button>
+            )}
           </div>
 
-          {/* Collapse toggle */}
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{
-            margin: "0 12px 8px", padding: "6px 12px", borderRadius: 8,
-            border: `1px solid ${K.b}`, background: K.w, cursor: "pointer",
-            fontSize: 12, color: K.s, display: "flex", alignItems: "center", gap: 6,
-            transition: "all 0.2s ease-in-out",
-          }}>
-            <span>{sidebarCollapsed ? "\u25B6" : "\u25C0"}</span>
-            {!sidebarCollapsed && <span style={{ whiteSpace: "nowrap" }}>Retour au menu</span>}
-          </button>
+          {/* Back link */}
+          {!sidebarCollapsed && (
+            <div style={{
+              padding: "6px 16px 12px", display: "flex", alignItems: "center", gap: 6,
+              fontSize: 13, color: K.s, cursor: "pointer", fontWeight: 500,
+            }}>
+              <span style={{ fontSize: 14 }}>{"\u2190"}</span> Retour au menu
+            </div>
+          )}
 
           {/* Nav items */}
           <div style={{ flex: 1, overflow: "auto", padding: "0 8px" }}>
@@ -298,7 +323,7 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
                 borderRadius: 8, marginBottom: 2, cursor: "pointer",
                 background: item.active ? K.c : "transparent",
                 color: item.active ? K.w : K.t,
-                fontSize: 13, fontWeight: 500, whiteSpace: "nowrap",
+                fontSize: 13, fontWeight: item.active ? 600 : 500, whiteSpace: "nowrap",
                 transition: "all 0.2s ease-in-out",
               }}>
                 <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
@@ -313,13 +338,14 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
             display: "flex", alignItems: "center", gap: 10,
           }}>
             <div style={{
-              width: 32, height: 32, borderRadius: "50%", background: K.a,
+              width: 32, height: 32, borderRadius: "50%", background: "#E8D5F5",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 12, fontWeight: 600, color: K.s, flexShrink: 0,
-            }}>U</div>
+              fontSize: 13, fontWeight: 600, color: "#7c3aed", flexShrink: 0,
+            }}>N</div>
             {!sidebarCollapsed && (
-              <div style={{ flex: 1, overflow: "hidden" }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: K.t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Utilisateur</div>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: K.t }}>Nathaniel</div>
+                <span style={{ fontSize: 11, color: K.s, cursor: "pointer" }}>{"\u25B4"}</span>
               </div>
             )}
           </div>
@@ -334,7 +360,7 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
             borderBottom: `1px solid ${K.b}`, background: K.w, flexShrink: 0,
           }}>
             <div>
-              <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.5 }}>Formations</h1>
+              <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.5 }}>Contenu IA</h1>
               {step !== "upload" && (
                 <div style={{ fontSize: 12, color: K.s, fontWeight: 400 }}>
                   {step === "analyzing" ? "Analyse en cours\u2026" : step === "proposals" ? `${props.length} propositions` : step === "generating" ? "G\u00e9n\u00e9ration\u2026" : "R\u00e9sultat"}
