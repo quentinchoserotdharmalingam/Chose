@@ -213,7 +213,7 @@ export default function App() {
         { role: "user", content: `${docContext}\n\nConsigne: ${context_str}\n\nGénère la page complète.` },
         { role: "assistant", content: result.html },
       ]);
-      setMsgs([{ role: "assistant", text: "Page générée ! Tu peux l'ajuster ci-dessous." }]);
+      setMsgs([{ role: "assistant", text: "Page générée ! Vous pouvez l'ajuster ci-dessous." }]);
 
       setTab("preview");
       setStep("result");
@@ -232,7 +232,7 @@ export default function App() {
       const result = await getSuggestions(h);
       if (Array.isArray(result.suggestions)) setSugs(result.suggestions.slice(0, 4));
     } catch {
-      setSugs(["Rends le ton plus chaleureux", "Mets les chiffres plus en avant", "Ajoute une FAQ en bas de page", "Réorganise les sections"]);
+      setSugs(["Rendez le ton plus chaleureux", "Mettez les chiffres plus en avant", "Ajoutez une FAQ en bas de page", "Réorganisez les sections"]);
     } finally { setLoadS(false); }
   };
 
@@ -448,9 +448,9 @@ tr:hover td{background:${K.tableHover}}`}</style>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: K.t }}>Nouvelle Page IA</div>
                   <div style={{ fontSize: 11, color: K.m }}>
-                    {step === "upload" && "Importe un PDF pour commencer"}
+                    {step === "upload" && "Importez un PDF pour commencer"}
                     {step === "analyzing" && "Analyse en cours…"}
-                    {step === "proposals" && "Choisis les sections à générer"}
+                    {step === "proposals" && "Choisissez les sections à générer"}
                     {step === "generating" && "Génération en cours…"}
                     {step === "result" && "Aperçu et ajustements"}
                   </div>
@@ -469,8 +469,8 @@ tr:hover td{background:${K.tableHover}}`}</style>
               <div style={{ flex: 1, overflow: "auto", padding: "48px 24px", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
                 <div style={{ maxWidth: 480, width: "100%", textAlign: "center" }}>
                   <div style={{ width: 64, height: 64, borderRadius: 16, background: K.l, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, margin: "0 auto 16px" }}>📄</div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Transforme ton PDF</h2>
-                  <p style={{ fontSize: 14, color: K.s, lineHeight: 1.6, marginBottom: 24 }}>L'IA analysera ton document et proposera 6 pages adaptées</p>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Transformez votre PDF</h2>
+                  <p style={{ fontSize: 14, color: K.s, lineHeight: 1.6, marginBottom: 24 }}>L'IA analysera votre document et proposera 6 pages adaptées</p>
 
                   <div onClick={() => fRef.current?.click()} style={{
                     border: `2px dashed ${file ? K.c : K.b}`, borderRadius: 16, padding: "32px 20px",
@@ -479,7 +479,7 @@ tr:hover td{background:${K.tableHover}}`}</style>
                   }}>
                     <div style={{ fontSize: 36, marginBottom: 10 }}>{file ? "✅" : "📤"}</div>
                     <div style={{ fontSize: 14, color: file ? K.c : K.s, fontWeight: file ? 600 : 400 }}>
-                      {file ? "Fichier prêt" : "Glisse ton PDF ici ou clique pour choisir"}
+                      {file ? "Fichier prêt" : "Glissez votre PDF ici ou cliquez pour choisir"}
                     </div>
                     {fname && (
                       <div style={{ marginTop: 10, padding: "6px 12px", borderRadius: 8, background: K.w, fontSize: 12, color: K.c, display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${K.b}` }}>
@@ -611,7 +611,7 @@ tr:hover td{background:${K.tableHover}}`}</style>
                     boxShadow: sel.size > 0 ? "0 4px 14px rgba(232,96,76,0.25)" : "none",
                     position: "sticky", top: 0, zIndex: 10,
                   }}>
-                    {sel.size === 0 ? "Sélectionne au moins 1" : sel.size === 1 ? "Générer la page" : `Fusionner (${sel.size})`}
+                    {sel.size === 0 ? "Sélectionnez au moins 1" : sel.size === 1 ? "Générer la page" : `Fusionner (${sel.size})`}
                   </button>
 
                   {/* Proposal cards */}
@@ -754,7 +754,7 @@ tr:hover td{background:${K.tableHover}}`}</style>
                 <div style={{ width: 360, flexShrink: 0, borderLeft: `1px solid ${K.b}`, display: "flex", flexDirection: "column", background: K.w }}>
                   <div style={{ padding: "12px 16px", borderBottom: `1px solid ${K.b}`, flexShrink: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: K.t }}>Ajuster la page</div>
-                    <div style={{ fontSize: 11, color: K.m }}>Demande des modifications via le chat</div>
+                    <div style={{ fontSize: 11, color: K.m }}>Demandez des modifications via le chat</div>
                   </div>
                   <div style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
                     {msgs.map((m, i) => (
@@ -794,7 +794,7 @@ tr:hover td{background:${K.tableHover}}`}</style>
                       fontSize: 14, outline: "none", resize: "none", lineHeight: 1.45,
                       background: draft ? K.l + "40" : K.w,
                       transition: "border-color 0.15s",
-                    }} placeholder="Décris ta modification…" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
+                    }} placeholder="Décrivez votre modification…" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
                     <button disabled={busy || !draft.trim()} onClick={send} style={{
                       padding: "10px 16px", borderRadius: 10, border: "none",
                       background: (busy || !draft.trim()) ? K.a : K.c,
