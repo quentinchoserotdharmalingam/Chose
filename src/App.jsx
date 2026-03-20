@@ -347,6 +347,9 @@ tr:hover td{background:${K.tableHover}}`}</style>
 
       {/* ═══ MAIN CONTENT ═══ */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+        {/* ═══ TABLE VIEW (hidden when wizard is open) ═══ */}
+        {!wizardOpen && (<>
         {/* Header */}
         <div style={{ padding: "24px 32px 0", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
@@ -429,21 +432,14 @@ tr:hover td{background:${K.tableHover}}`}</style>
             <button style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${K.b}`, background: K.w, cursor: "pointer", fontSize: 14, color: K.m, display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
           </div>
         </div>
-      </div>
+        </>)}
 
-      {/* ═══ WIZARD MODAL / DRAWER ═══ */}
-      {wizardOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", justifyContent: "flex-end", animation: "fadeIn 0.2s ease" }}>
-          {/* Backdrop */}
-          <div onClick={closeWizard} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(2px)" }} />
-
-          {/* Drawer panel */}
+        {/* ═══ WIZARD FULL PAGE ═══ */}
+        {wizardOpen && (
           <div style={{
-            position: "relative", width: step === "result" ? 700 : 520, maxWidth: "90vw",
-            background: K.w, height: "100%",
+            flex: 1, background: K.w,
             display: "flex", flexDirection: "column",
-            boxShadow: "-8px 0 32px rgba(0,0,0,0.12)",
-            animation: "slideIn 0.3s ease",
+            overflow: "hidden", animation: "fadeIn 0.2s ease",
           }}>
             {/* Drawer header */}
             <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${K.b}`, flexShrink: 0 }}>
@@ -470,8 +466,8 @@ tr:hover td{background:${K.tableHover}}`}</style>
 
             {/* ── STEP: UPLOAD ── */}
             {step === "upload" && (
-              <div style={{ flex: 1, overflow: "auto", padding: "32px 24px", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
-                <div style={{ maxWidth: 380, width: "100%", textAlign: "center" }}>
+              <div style={{ flex: 1, overflow: "auto", padding: "48px 24px", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
+                <div style={{ maxWidth: 480, width: "100%", textAlign: "center" }}>
                   <div style={{ width: 64, height: 64, borderRadius: 16, background: K.l, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, margin: "0 auto 16px" }}>📄</div>
                   <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Transforme ton PDF</h2>
                   <p style={{ fontSize: 14, color: K.s, lineHeight: 1.6, marginBottom: 24 }}>L'IA analysera ton document et proposera 6 pages adaptées</p>
@@ -508,8 +504,8 @@ tr:hover td{background:${K.tableHover}}`}</style>
 
             {/* ── STEP: ANALYZING ── */}
             {step === "analyzing" && (
-              <div style={{ flex: 1, overflow: "auto", padding: "24px 20px" }}>
-                <div style={{ maxWidth: 420, margin: "0 auto" }}>
+              <div style={{ flex: 1, overflow: "auto", padding: "40px 32px" }}>
+                <div style={{ maxWidth: 540, margin: "0 auto" }}>
                   <div style={{ textAlign: "center", marginBottom: 20 }}>
                     <div style={{ width: 40, height: 40, border: `3px solid ${K.b}`, borderTopColor: K.c, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 14px" }} />
                     <div style={{ fontSize: 15, fontWeight: 600 }}>Analyse du document…</div>
@@ -583,8 +579,8 @@ tr:hover td{background:${K.tableHover}}`}</style>
 
             {/* ── STEP: PROPOSALS ── */}
             {step === "proposals" && (
-              <div style={{ flex: 1, overflow: "auto", padding: "16px 20px" }}>
-                <div style={{ maxWidth: 460, margin: "0 auto" }}>
+              <div style={{ flex: 1, overflow: "auto", padding: "24px 32px" }}>
+                <div style={{ maxWidth: 700, margin: "0 auto" }}>
                   {/* Summary card */}
                   <div style={{ padding: "14px 16px", borderRadius: 12, background: K.l, marginBottom: 14, animation: "fu 0.3s" }}>
                     {company && <div style={{ fontSize: 14, fontWeight: 700, color: K.c, marginBottom: 3 }}>{company}</div>}
@@ -619,7 +615,7 @@ tr:hover td{background:${K.tableHover}}`}</style>
                   </button>
 
                   {/* Proposal cards */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
                     {props.map((pr, idx) => {
                       const on = sel.has(pr.id);
                       return (
@@ -651,8 +647,8 @@ tr:hover td{background:${K.tableHover}}`}</style>
 
             {/* ── STEP: GENERATING ── */}
             {step === "generating" && (
-              <div style={{ flex: 1, overflow: "auto", padding: "24px 20px", background: K.bg }}>
-                <div style={{ maxWidth: 420, margin: "0 auto" }}>
+              <div style={{ flex: 1, overflow: "auto", padding: "40px 32px", background: K.bg }}>
+                <div style={{ maxWidth: 600, margin: "0 auto" }}>
                   {/* Progress */}
                   <div style={{ marginBottom: 20 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
@@ -718,93 +714,96 @@ tr:hover td{background:${K.tableHover}}`}</style>
 
             {/* ── STEP: RESULT ── */}
             {step === "result" && (<>
-              {/* Tabs */}
-              <div style={{ display: "flex", borderBottom: `1px solid ${K.b}`, background: K.w, flexShrink: 0 }}>
-                {[{ id: "preview", l: "Aperçu" }, { id: "chat", l: "Ajuster" }, { id: "code", l: "HTML" }].map((t) => (
-                  <button key={t.id} onClick={() => setTab(t.id)} style={{
-                    flex: 1, padding: "12px 4px", border: "none", background: "transparent",
-                    color: tab === t.id ? K.c : K.m, fontSize: 13, fontWeight: tab === t.id ? 700 : 500,
-                    cursor: "pointer", borderBottom: tab === t.id ? `2px solid ${K.c}` : "2px solid transparent",
-                    transition: "color 0.15s",
-                  }}>{t.l}</button>
-                ))}
-              </div>
-
               {/* Context bar */}
-              <div style={{ display: "flex", gap: 8, padding: "8px 16px", borderBottom: `1px solid ${K.b}`, background: K.bg, flexShrink: 0, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 8, padding: "8px 20px", borderBottom: `1px solid ${K.b}`, background: K.bg, flexShrink: 0, alignItems: "center" }}>
                 <div style={{ flex: 1, fontSize: 12, color: K.s, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {props.filter((p) => sel.has(p.id)).map((p) => p.i + " " + p.t).join(" + ")}
                 </div>
-                <button onClick={() => { setStep("proposals"); setHtml(""); setMsgs([]); setSugs([]); setPct(0); setDraft(""); setErr(""); }} style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${K.b}`, background: K.w, fontSize: 12, fontWeight: 500, cursor: "pointer", color: K.s }}>Regénérer</button>
+                {/* Tabs inline */}
+                <div style={{ display: "flex", gap: 2, background: K.a, borderRadius: 8, padding: 2 }}>
+                  {[{ id: "preview", l: "Aperçu" }, { id: "code", l: "HTML" }].map((t) => (
+                    <button key={t.id} onClick={() => setTab(t.id)} style={{
+                      padding: "6px 14px", border: "none", borderRadius: 6,
+                      background: tab === t.id || (tab === "chat" && t.id === "preview") ? K.w : "transparent",
+                      color: tab === t.id || (tab === "chat" && t.id === "preview") ? K.t : K.m,
+                      fontSize: 12, fontWeight: tab === t.id ? 600 : 500,
+                      cursor: "pointer", boxShadow: tab === t.id || (tab === "chat" && t.id === "preview") ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                    }}>{t.l}</button>
+                  ))}
+                </div>
+                <button onClick={() => { setStep("proposals"); setHtml(""); setMsgs([]); setSugs([]); setPct(0); setDraft(""); setErr(""); }} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${K.b}`, background: K.w, fontSize: 12, fontWeight: 500, cursor: "pointer", color: K.s }}>Regénérer</button>
               </div>
 
-              <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                {/* Preview tab */}
-                {tab === "preview" && (
-                  <div style={{ flex: 1, overflow: "auto", background: "#eef0f2" }}>
-                    <iframe ref={iRef} style={{ width: "100%", height: "100%", border: "none", minHeight: 600 }} sandbox="allow-same-origin allow-scripts" title="Aperçu" />
+              {/* Side-by-side layout: Preview/Code on left, Chat on right */}
+              <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
+                {/* Left: Preview or Code */}
+                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                  {(tab === "preview" || tab === "chat") && (
+                    <div style={{ flex: 1, overflow: "auto", background: "#eef0f2" }}>
+                      <iframe ref={iRef} style={{ width: "100%", height: "100%", border: "none", minHeight: 600 }} sandbox="allow-same-origin allow-scripts" title="Aperçu" />
+                    </div>
+                  )}
+                  {tab === "code" && (
+                    <div style={{ flex: 1, overflow: "auto", padding: 20, background: K.bg }}>
+                      <pre style={{ background: K.w, border: `1px solid ${K.b}`, borderRadius: 12, padding: 16, fontSize: 12, lineHeight: 1.55, color: K.s, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{html}</pre>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Chat panel */}
+                <div style={{ width: 360, flexShrink: 0, borderLeft: `1px solid ${K.b}`, display: "flex", flexDirection: "column", background: K.w }}>
+                  <div style={{ padding: "12px 16px", borderBottom: `1px solid ${K.b}`, flexShrink: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: K.t }}>Ajuster la page</div>
+                    <div style={{ fontSize: 11, color: K.m }}>Demande des modifications via le chat</div>
                   </div>
-                )}
+                  <div style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+                    {msgs.map((m, i) => (
+                      <div key={i} style={{
+                        padding: "10px 14px", borderRadius: 12, fontSize: 13, lineHeight: 1.55,
+                        maxWidth: "85%", alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                        background: m.role === "user" ? K.c : K.bg,
+                        color: m.role === "user" ? K.w : K.t,
+                        border: m.role === "user" ? "none" : `1px solid ${K.b}`,
+                        wordBreak: "break-word", animation: "fu 0.2s",
+                      }}>{m.text}</div>
+                    ))}
+                    {busy && <div style={{ padding: "10px 14px", borderRadius: 12, fontSize: 13, alignSelf: "flex-start", background: K.bg, border: `1px solid ${K.b}`, color: K.m, animation: "pu 2.5s ease infinite" }}>Modification…</div>}
 
-                {/* Chat tab */}
-                {tab === "chat" && (
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                    <div style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
-                      {msgs.map((m, i) => (
-                        <div key={i} style={{
-                          padding: "10px 14px", borderRadius: 12, fontSize: 13, lineHeight: 1.55,
-                          maxWidth: "85%", alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-                          background: m.role === "user" ? K.c : K.bg,
-                          color: m.role === "user" ? K.w : K.t,
-                          border: m.role === "user" ? "none" : `1px solid ${K.b}`,
-                          wordBreak: "break-word", animation: "fu 0.2s",
-                        }}>{m.text}</div>
-                      ))}
-                      {busy && <div style={{ padding: "10px 14px", borderRadius: 12, fontSize: 13, alignSelf: "flex-start", background: K.bg, border: `1px solid ${K.b}`, color: K.m, animation: "pu 2.5s ease infinite" }}>Modification…</div>}
-
-                      {sugs.length > 0 && !busy && (
-                        <div style={{ animation: "fu 0.3s" }}>
-                          <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>Suggestions</div>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            {sugs.map((s, i) => (
-                              <button key={i} onClick={() => { setMsgs((p) => [...p, { role: "user", text: s }]); setSugs([]); modify(s); }} style={{
-                                padding: "10px 14px", borderRadius: 12, border: `1px solid ${K.b}`,
-                                background: K.w, color: K.t, fontSize: 13, cursor: "pointer",
-                                textAlign: "left", lineHeight: 1.5,
-                              }}>{s}</button>
-                            ))}
-                          </div>
+                    {sugs.length > 0 && !busy && (
+                      <div style={{ animation: "fu 0.3s" }}>
+                        <div style={{ fontSize: 10, fontWeight: 600, color: K.m, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>Suggestions</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          {sugs.map((s, i) => (
+                            <button key={i} onClick={() => { setMsgs((p) => [...p, { role: "user", text: s }]); setSugs([]); modify(s); }} style={{
+                              padding: "10px 14px", borderRadius: 12, border: `1px solid ${K.b}`,
+                              background: K.w, color: K.t, fontSize: 13, cursor: "pointer",
+                              textAlign: "left", lineHeight: 1.5,
+                            }}>{s}</button>
+                          ))}
                         </div>
-                      )}
-                      {loadS && !busy && sugs.length === 0 && <div style={{ fontSize: 11, color: K.m, animation: "pu 2.5s ease infinite" }}>Chargement des suggestions…</div>}
-                      <div ref={eRef} />
-                    </div>
-
-                    <div style={{ padding: "12px 14px", borderTop: `1px solid ${K.b}`, display: "flex", gap: 10, flexShrink: 0, background: K.w }}>
-                      <textarea rows={1} style={{
-                        flex: 1, padding: "10px 12px", borderRadius: 10,
-                        border: `1px solid ${draft ? K.c : K.b}`, color: K.t,
-                        fontSize: 14, outline: "none", resize: "none", lineHeight: 1.45,
-                        background: draft ? K.l + "40" : K.w,
-                        transition: "border-color 0.15s",
-                      }} placeholder="Décris ta modification…" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
-                      <button disabled={busy || !draft.trim()} onClick={send} style={{
-                        padding: "10px 16px", borderRadius: 10, border: "none",
-                        background: (busy || !draft.trim()) ? K.a : K.c,
-                        color: (busy || !draft.trim()) ? K.m : K.w,
-                        fontSize: 16, cursor: (busy || !draft.trim()) ? "not-allowed" : "pointer",
-                        flexShrink: 0, alignSelf: "flex-end",
-                      }}>➤</button>
-                    </div>
+                      </div>
+                    )}
+                    {loadS && !busy && sugs.length === 0 && <div style={{ fontSize: 11, color: K.m, animation: "pu 2.5s ease infinite" }}>Chargement des suggestions…</div>}
+                    <div ref={eRef} />
                   </div>
-                )}
 
-                {/* Code tab */}
-                {tab === "code" && (
-                  <div style={{ flex: 1, overflow: "auto", padding: 14, background: K.bg }}>
-                    <pre style={{ background: K.w, border: `1px solid ${K.b}`, borderRadius: 12, padding: 14, fontSize: 11, lineHeight: 1.55, color: K.s, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{html}</pre>
+                  <div style={{ padding: "12px 14px", borderTop: `1px solid ${K.b}`, display: "flex", gap: 10, flexShrink: 0, background: K.w }}>
+                    <textarea rows={1} style={{
+                      flex: 1, padding: "10px 12px", borderRadius: 10,
+                      border: `1px solid ${draft ? K.c : K.b}`, color: K.t,
+                      fontSize: 14, outline: "none", resize: "none", lineHeight: 1.45,
+                      background: draft ? K.l + "40" : K.w,
+                      transition: "border-color 0.15s",
+                    }} placeholder="Décris ta modification…" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
+                    <button disabled={busy || !draft.trim()} onClick={send} style={{
+                      padding: "10px 16px", borderRadius: 10, border: "none",
+                      background: (busy || !draft.trim()) ? K.a : K.c,
+                      color: (busy || !draft.trim()) ? K.m : K.w,
+                      fontSize: 16, cursor: (busy || !draft.trim()) ? "not-allowed" : "pointer",
+                      flexShrink: 0, alignSelf: "flex-end",
+                    }}>➤</button>
                   </div>
-                )}
+                </div>
               </div>
             </>)}
 
@@ -816,8 +815,8 @@ tr:hover td{background:${K.tableHover}}`}</style>
               </div>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
