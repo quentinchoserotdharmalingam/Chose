@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { analyzePdf, proposePdf, generatePage, modifyPage, getSuggestions } from "./api.js";
+import { extractPdfText, analyzeAndPropose, generatePage, modifyPage, getSuggestions } from "./api.js";
 
 // ── UTILS ──
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -62,6 +62,7 @@ export default function App() {
   const [sugs, setSugs] = useState([]);
   const [loadS, setLoadS] = useState(false);
   const [phase, setPhase] = useState(0);
+  const [ocrText, setOcrText] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -105,25 +106,27 @@ export default function App() {
     setErr(""); setFile(f); setFname(f.name);
   };
 
-  // ── ANALYZE ──
+  // ── ANALYZE (with Mistral OCR) ──
   const analyze = async () => {
     if (!file) return;
     setStep("analyzing"); setErr(""); setPhase(1); setFacts([]);
-    setSummary(""); setCompany("");
+    setSummary(""); setCompany(""); setOcrText("");
     abortRef.current = false;
 
     try {
-      await sleep(600);
+      // Phase 1: OCR extraction via Mistral (client-side, avoids Vercel 4.5MB limit)
+      await sleep(400);
+      if (abortRef.current) return;
+      const extracted = await extractPdfText(file);
+      setOcrText(extracted);
       if (abortRef.current) return;
       setPhase(2);
 
-      const [analyzeResult, proposeResult] = await Promise.all([
-        analyzePdf(file),
-        proposePdf(file),
-      ]);
+      // Phase 2: Analyze + Propose in ONE call (parallel Haiku, single cold start)
+      const { analysis, proposals } = await analyzeAndPropose(extracted);
       if (abortRef.current) return;
 
-      const sd = analyzeResult;
+      const sd = analysis;
       if (sd.c) { setCompany(sd.c); await sleep(1200); }
       if (sd.s) { setSummary(sd.s); await sleep(1000); }
       const allFacts = sd.f || [];
@@ -136,7 +139,7 @@ export default function App() {
       await sleep(1000);
       setPhase(3);
 
-      const pd = proposeResult;
+      const pd = proposals;
       setProps((pd.p || []).map((p, i) => ({ ...p, id: `p${i}` })));
       setPhase(4);
       setStep("proposals");
@@ -183,6 +186,7 @@ export default function App() {
         context: docContext,
         company,
         color,
+        ocrText,
       });
       if (abortRef.current) return;
 
@@ -253,7 +257,7 @@ export default function App() {
     setStep("upload"); setSel(new Set()); setFile(null); setFname("");
     setHtml(""); setMsgs([]); setHist([]); setErr("");
     setDraft(""); setTab("preview"); setSugs([]); setCompany("");
-    setColor("#FF6058"); setSummary(""); setFacts([]); setProps([]);
+    setColor("#FF6058"); setSummary(""); setFacts([]); setProps([]); setOcrText("");
     setPct(0); setPhase(0); setGenPhase("");
   };
 
@@ -481,7 +485,7 @@ textarea::placeholder,input::placeholder{color:${K.s}}input,textarea,button{font
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
                   {[
-                    { l: "Lecture du PDF", ok: phase > 1 },
+                    { l: "Extraction OCR du PDF (Mistral)", ok: phase > 1 },
                     { l: "Identification du contenu", ok: phase > 1 && (!!company || !!summary) },
                     { l: "Extraction des informations cl\u00e9s", ok: facts.length > 0 },
                     { l: "Pr\u00e9paration des propositions", ok: phase > 3 },

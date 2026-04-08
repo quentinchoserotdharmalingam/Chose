@@ -9,36 +9,79 @@ async function request(path, options = {}) {
   return res.json();
 }
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Step 1: Extract text from PDF via Mistral OCR (called from client)
+ * Returns raw extracted text from all pages
+ */
+export async function extractPdfText(file) {
+  const b64 = await fileToBase64(file);
+
+  const res = await fetch("https://api.mistral.ai/v1/ocr", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${await getMistralKey()}`,
+    },
+    body: JSON.stringify({
+      model: "mistral-ocr-latest",
+      document: {
+        type: "document_url",
+        document_url: `data:application/pdf;base64,${b64}`,
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Mistral OCR erreur ${res.status}`);
+  }
+
+  const data = await res.json();
+  return (data.pages || [])
+    .map((p) => p.markdown || "")
+    .join("\n\n")
+    .substring(0, 8000);
+}
+
+/** Fetch Mistral key from our backend (keeps it server-side) */
+async function getMistralKey() {
+  const { key } = await request("/mistral-key");
+  return key;
+}
+
 export async function healthCheck() {
   return request("/health");
 }
 
 /**
- * Analyze PDF → { s: summary, c: company, f: [facts] }
+ * Step 2: Analyze + Propose in ONE call (1 cold start, parallel Haiku calls)
+ * Returns { analysis: { s, c, f[] }, proposals: { p: [...] } }
  */
-export async function analyzePdf(file) {
-  const form = new FormData();
-  form.append("pdf", file);
-  return request("/analyze", { method: "POST", body: form });
-}
-
-/**
- * Propose 6 pages → { p: [{ i, t, d, r }] }
- */
-export async function proposePdf(file) {
-  const form = new FormData();
-  form.append("pdf", file);
-  return request("/propose", { method: "POST", body: form });
+export async function analyzeAndPropose(extractedText) {
+  return request("/analyze-and-propose", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ extracted_text: extractedText }),
+  });
 }
 
 /**
  * Generate HTML page → { html }
  */
-export async function generatePage({ prompt, context, company, color }) {
+export async function generatePage({ prompt, context, company, color, ocrText }) {
   return request("/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, context, company, color }),
+    body: JSON.stringify({ prompt, context, company, color, ocrText }),
   });
 }
 

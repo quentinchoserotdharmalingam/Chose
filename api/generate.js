@@ -4,10 +4,14 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
   try {
-    const { prompt, context, company, color } = req.body;
+    const { prompt, context, company, color, ocrText } = req.body;
     if (!prompt) return res.status(400).json({ error: "Prompt requis" });
 
-    const userPrompt = `${context || ""}
+    const fullContext = ocrText
+      ? `CONTENU COMPLET DU DOCUMENT (extrait par OCR) :\n${ocrText}\n\nRÉSUMÉ : ${context || ""}`
+      : (context || "");
+
+    const userPrompt = `${fullContext}
 
 ${prompt}
 ${company ? `Entreprise: "${company}".` : ""} Couleur: ${color || "#6366f1"}.
